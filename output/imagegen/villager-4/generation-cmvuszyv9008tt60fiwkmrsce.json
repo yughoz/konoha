@@ -1,0 +1,15 @@
+{
+  "provider": "Bumi Digital",
+  "model": "google/nano-banana-2.1",
+  "generation_id": "cmvuszyv9008tt60fiwkmrsce",
+  "parameters": {
+    "prompt": "Production asset for Desa Komen, a cozy Indonesian village website. Art direction: warm hand-painted 2D editorial storybook illustration, rounded shapes, clean readable silhouette, subtly textured color fills, thin restrained dark forest-green outlines, sage and olive greens, warm cream, muted terracotta, muted ochre and dusty blue. Charming flat 2D illustration, not a 3D render and not pixel art. Elevated orthographic three-quarter view, gentle diffuse light from upper left.\n\nCreate ONE isolated full-body adult Indonesian woman, medium warm-brown skin, black hair tied back in a small low bun, dusty-blue short-sleeve blouse, warm cream wide-leg trousers, simple brown sandals.\n\nPose: relaxed upright standing, arms loosely at sides, feet clearly separate, body and face in a front-three-quarter view turned gently toward upper-left. Both arms and both feet must be visible. Cute editorial proportions, head about one third of full body height, simple eyes and a subtle smile. No carried items, bags, props, scenery, or other characters. Composition: square 1:1 canvas, complete full body from head to sandals, centered, character about 82 % canvas height, feet near 92 % canvas height. At least8 % breathing room. Bottom-center feet anchor, legible at 64 px wide. This is one static portrait, not an animation sheet.\n\nIMPORTANT BACKGROUND: flat perfectly uniform solid bright MAGENTA #ff00ff across every background pixel. No texture on the magenta backdrop, no gradient, no checkerboard, no floor plane, no ground contact shadow, no cast shadow or glow. Do not use magenta anywhere inside the subject. This single-color backdrop will be removed programmatically. Crisp clean subject edges, no blurred edge halo.\n\nNo text, letters, numbers, labels, logos, watermark, border, speech bubbles, multiple views, contact sheet, or cropped subject edges. Output one square illustration only.",
+    "size": "1:1",
+    "resolution": "1K"
+  },
+  "status": "completed",
+  "documentation": "https://bumi.digital/api-docs/image",
+  "credits_used": 0.4,
+  "downloaded_file": "generated-cmvuszyv9008tt60fiwkmrsce.jpg",
+  "bytes": 341724
+}

@@ -1,0 +1,18 @@
+{
+  "provider": "Bumi Digital",
+  "model": "google/nano-banana-2.1",
+  "generation_id": "cmvv1tt9d00qvt60fysi3d0ho",
+  "parameters": {
+    "prompt": "Draw FOUR full-body animation poses in ONE horizontal row. This is one complete walk cycle of the SAME man in reference image 1. Reference image 2 is an empty layout guide: copy only its FOUR invisible slots, never its visible lines or text.\n\nCRITICAL: Keep the exact illustrated character from image 1: same face, same small head-to-body ratio, short black hair, brown skin, terracotta shirt, cream trousers, sandals. Fixed front three-quarter view, nose and toes point toward screen LEFT (the left edge of this image), both eyes and smile visible. Never draw the back. No camera change between poses.\n\nPose1: LEFT leg reaches forward toward screen-left; RIGHT leg trails back toward screen-right; RIGHT arm swings forward.\nPose2: LEFT leg straight vertically under the body bearing weight; RIGHT knee bends and passes beside left knee, right sandal lifted off ground.\nPose3: RIGHT leg reaches forward toward screen-left; LEFT leg trails back toward screen-right; LEFT arm swings forward. This is the OPPOSITE support leg to pose1.\nPose4: RIGHT leg straight vertically under body bearing weight; LEFT knee bends and passes beside right knee, left sandal lifted off ground.\n\nThese are FOUR DIFFERENT WALK PHASES in chronological order; 1 and 3 must show the opposite leg in front. This is a loop: 4 flows into 1. No repeated contact pose. Use real knee bending and opposing arm swings. Do not move the face or torso center. Same body height, ground baseline, scale and palette. One complete, uncropped person in each slot, wide gaps between people, no overlap.\n\nPerfectly flat solid MAGENTA #FF00FF background. No ground, shadows, lines, arrows, symbols, text, labels, visible grid or boxes. Output only four poses of the SAME man on magenta.",
+    "size": "21:9",
+    "resolution": "2K",
+    "image_urls": [
+      "https://storage.bumi.digital/generations/cmvusxygh008bt60frascg1ax.jpg"
+    ]
+  },
+  "status": "completed",
+  "documentation": "https://bumi.digital/api-docs/image",
+  "credits_used": 0.6,
+  "downloaded_file": "generated-cmvv1tt9d00qvt60fysi3d0ho.jpg",
+  "bytes": 1611755
+}

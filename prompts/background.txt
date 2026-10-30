@@ -1,0 +1,10 @@
+Production asset for Desa Komen, a cozy Indonesian village website. Art direction: warm hand-painted 2D editorial storybook illustration, rounded shapes, clean readable silhouette, subtly textured color fills, thin restrained dark forest-green outlines, sage and olive greens, warm cream, muted terracotta, muted ochre and dusty blue. Charming flat 2D illustration, not a 3D render and not pixel art. Elevated orthographic three-quarter view, gentle diffuse light from upper left.
+
+Create a full-scene EMPTY landscape background. The house and residents will be separate animated layers. No sky or visible horizon. Mostly empty mint and sage grassy village field, sparse tiny grass tufts and cream wildflowers. One warm sandy-tan pedestrian path. Only a short rustic timber fence and one small simple village lamp near outer boundaries, far from the central house area and queue path. Spacious with very little decoration.
+
+Landscape 3:2,1536x1024 if supported. Composition coordinates are percentages of the whole image: reserve upper-middle/left field for a separate house whose porch bottom will sit at x40 %, y47 %. Do NOT draw that house. Queue path begins just below that spot at x43 %, y55 %, curves gradually toward x86 %, y84 %, then continues beyond lower-right edge. Make the usable path broad and clear of obstacles. Keep ample negative space around house footprint and queue. Fence and lamp must stay at boundaries. No large foreground trees.
+
+Opaque background, no magenta matte, no transparency or checkerboard. This image will be resized to 1600x1120 without cropping; preserve percentage coordinate alignment.
+
+EXCLUDE houses, buildings, people, characters, animals, vehicles, bridges, furniture in path, text, letters, numbers, written signs, labels, speech bubbles, logos, watermarks, border, mockup framing. One continuous empty landscape only.
+

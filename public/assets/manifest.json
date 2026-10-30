@@ -1,0 +1,374 @@
+{
+  "version": 1,
+  "status": "ready",
+  "generation": {
+    "provider": "Bumi Digital",
+    "tool": "tools/generate-images.py",
+    "model": "google/nano-banana-2.1",
+    "date": "2026-10-30",
+    "documentation": "https://bumi.digital/api-docs/image",
+    "skill": "create-image-bd",
+    "prompts": "prompts/",
+    "totalCredits": 3.6,
+    "note": "One house pilot visually reviewed before remaining generation; eight successful jobs, no model switching or repeated paid probes. Originals and generation metadata preserved under output/imagegen/."
+  },
+  "direction": {
+    "style": "Cozy Indonesian village, rounded 2D editorial storybook illustration, soft paper grain, clean readable silhouettes",
+    "view": "Elevated three-quarter orthographic; consistent daylight from upper left",
+    "palette": [
+      "#f7f3e8",
+      "#d9754f",
+      "#759c76",
+      "#b6cca1",
+      "#edcf99",
+      "#3e5445"
+    ],
+    "filtering": "smooth",
+    "collision": "none; decorative visual assets only",
+    "nativeScene": [
+      1000,
+      700
+    ],
+    "animation": "All four villagers use a CSS cutout rig: separate left/right leg layers from the original Bumi PNGs. Full PNG when idle; alternating steps only while travelling."
+  },
+  "assets": [
+    {
+      "file": "background.png",
+      "subject": "Empty grassy village landscape with queue path and boundary fence/lamp",
+      "targetSize": [
+        1600,
+        1120
+      ],
+      "display": "Stretch to world bounds without cropping so normalized coordinates stay aligned",
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "requiresAlpha": false,
+      "frames": 1,
+      "status": "ready",
+      "source": "output/imagegen/background/generated-cmvusxybg0085t60fv6qc15ib.jpg",
+      "license": "AI-generated with Bumi Digital; provider terms apply.",
+      "generationId": "cmvusxybg0085t60fv6qc15ib",
+      "promptFile": "prompts/background.txt",
+      "creditsUsed": 0.6,
+      "sha256": "7b074f0d404060476928d5d3565a01af61ef95191cea11f62e05a3cf841286c8",
+      "validation": {
+        "format": "PNG",
+        "dimensions": [
+          1600,
+          1120
+        ],
+        "realAlpha": false,
+        "completeSilhouette": true,
+        "visualReview": "Reviewed on dark and sage backgrounds; browser checked at desktop1440px and mobile390px."
+      },
+      "normalization": "Bicubic/Lanczos resize to scene aspect ratio without cropping."
+    },
+    {
+      "file": "house.png",
+      "subject": "Village chief house",
+      "targetSize": [
+        768,
+        768
+      ],
+      "displayWidth": 300,
+      "pivot": [
+        0.5,
+        1
+      ],
+      "requiresAlpha": true,
+      "frames": 1,
+      "status": "ready",
+      "source": "output/imagegen/house/generated-cmvususgv007tt60frgqj39fz.jpg",
+      "license": "AI-generated with Bumi Digital; provider terms apply.",
+      "generationId": "cmvususgv007tt60frgqj39fz",
+      "promptFile": "prompts/house.txt",
+      "creditsUsed": 0.6,
+      "sha256": "a92c1f29a9dc4bdbc94f74cf2b367a7610b3bce7e91e3f4092779264152ee1f4",
+      "validation": {
+        "format": "PNG",
+        "dimensions": [
+          768,
+          768
+        ],
+        "realAlpha": true,
+        "completeSilhouette": true,
+        "visualReview": "Reviewed on dark and sage backgrounds; browser checked at desktop1440px and mobile390px.",
+        "visibleBounds": [
+          16,
+          164,
+          752,
+          752
+        ]
+      },
+      "normalization": "Magenta chroma key via bundled remove_chroma_key.py, soft thresholds35/130, despill, alpha crop and bottom-center normalization."
+    },
+    {
+      "file": "tree.png",
+      "subject": "Round tropical village tree",
+      "targetSize": [
+        512,
+        512
+      ],
+      "displayWidth": 150,
+      "pivot": [
+        0.5,
+        1
+      ],
+      "requiresAlpha": true,
+      "frames": 1,
+      "status": "ready",
+      "source": "output/imagegen/tree/generated-cmvusxygq008gt60fli4m4678.jpg",
+      "license": "AI-generated with Bumi Digital; provider terms apply.",
+      "generationId": "cmvusxygq008gt60fli4m4678",
+      "promptFile": "prompts/tree.txt",
+      "creditsUsed": 0.4,
+      "sha256": "62184dfb18e952f21e95b8a3b3d81521d3e6dd8646d730726838f76aeeab1583",
+      "validation": {
+        "format": "PNG",
+        "dimensions": [
+          512,
+          512
+        ],
+        "realAlpha": true,
+        "completeSilhouette": true,
+        "visualReview": "Reviewed on dark and sage backgrounds; browser checked at desktop1440px and mobile390px.",
+        "visibleBounds": [
+          23,
+          12,
+          488,
+          500
+        ]
+      },
+      "normalization": "Magenta chroma key via bundled remove_chroma_key.py, soft thresholds35/130, despill, alpha crop and bottom-center normalization."
+    },
+    {
+      "file": "bush.png",
+      "subject": "Low leafy shrub cluster",
+      "targetSize": [
+        512,
+        320
+      ],
+      "displayWidth": 90,
+      "pivot": [
+        0.5,
+        1
+      ],
+      "requiresAlpha": true,
+      "frames": 1,
+      "status": "ready",
+      "source": "output/imagegen/bush/generated-cmvusxyg80089t60fc9xgumy6.jpg",
+      "license": "AI-generated with Bumi Digital; provider terms apply.",
+      "generationId": "cmvusxyg80089t60fc9xgumy6",
+      "promptFile": "prompts/bush.txt",
+      "creditsUsed": 0.4,
+      "sha256": "b6be4d577b8dd105edd6c6acd79d715e226faa1415895e2185a820646729dbaf",
+      "validation": {
+        "format": "PNG",
+        "dimensions": [
+          512,
+          320
+        ],
+        "realAlpha": true,
+        "completeSilhouette": true,
+        "visualReview": "Reviewed on dark and sage backgrounds; browser checked at desktop1440px and mobile390px.",
+        "visibleBounds": [
+          61,
+          12,
+          450,
+          308
+        ]
+      },
+      "normalization": "Magenta chroma key via bundled remove_chroma_key.py, soft thresholds35/130, despill, alpha crop and bottom-center normalization."
+    },
+    {
+      "file": "villager-1.png",
+      "subject": "Man in terracotta shirt",
+      "targetSize": [
+        192,
+        256
+      ],
+      "displayWidth": 64,
+      "pivot": [
+        0.5,
+        1
+      ],
+      "requiresAlpha": true,
+      "frames": 1,
+      "status": "ready",
+      "source": "output/imagegen/villager-1/generated-cmvusxygh008bt60frascg1ax.jpg",
+      "license": "AI-generated with Bumi Digital; provider terms apply.",
+      "generationId": "cmvusxygh008bt60frascg1ax",
+      "promptFile": "prompts/villager-1.txt",
+      "creditsUsed": 0.4,
+      "sha256": "35e60931d87d9284390e4541723380d0d5576eb73e90396dae8bb26c03635c74",
+      "validation": {
+        "format": "PNG",
+        "dimensions": [
+          192,
+          256
+        ],
+        "realAlpha": true,
+        "completeSilhouette": true,
+        "visualReview": "Reviewed on dark and sage backgrounds; browser checked at desktop1440px and mobile390px.",
+        "visibleBounds": [
+          54,
+          12,
+          137,
+          244
+        ]
+      },
+      "normalization": "Magenta chroma key via bundled remove_chroma_key.py, soft thresholds35/130, despill, alpha crop and bottom-center normalization.",
+      "animation": {
+        "engine": "css-cutout-rig",
+        "source": "src/walk.js",
+        "states": [
+          "walk"
+        ],
+        "note": "Manually rigged original Bumi artwork; not a generated walking atlas."
+      }
+    },
+    {
+      "file": "villager-2.png",
+      "subject": "Woman in sage blouse and cream hijab",
+      "targetSize": [
+        192,
+        256
+      ],
+      "displayWidth": 64,
+      "pivot": [
+        0.5,
+        1
+      ],
+      "requiresAlpha": true,
+      "frames": 1,
+      "status": "ready",
+      "source": "output/imagegen/villager-2/generated-cmvusxygs008jt60fv94ebusm.jpg",
+      "license": "AI-generated with Bumi Digital; provider terms apply.",
+      "generationId": "cmvusxygs008jt60fv94ebusm",
+      "promptFile": "prompts/villager-2.txt",
+      "creditsUsed": 0.4,
+      "sha256": "8fec26f93e66ea410dcab87a2baafd46c7eb623e2d00e7ba40a94726e42586ef",
+      "validation": {
+        "format": "PNG",
+        "dimensions": [
+          192,
+          256
+        ],
+        "realAlpha": true,
+        "completeSilhouette": true,
+        "visualReview": "Reviewed on dark and sage backgrounds; browser checked at desktop1440px and mobile390px.",
+        "visibleBounds": [
+          61,
+          12,
+          130,
+          244
+        ]
+      },
+      "normalization": "Magenta chroma key via bundled remove_chroma_key.py, soft thresholds35/130, despill, alpha crop and bottom-center normalization.",
+      "animation": {
+        "engine": "css-cutout-rig",
+        "source": "src/walk.js",
+        "states": [
+          "walk"
+        ],
+        "note": "Manually rigged original Bumi artwork; not a generated walking atlas."
+      }
+    },
+    {
+      "file": "villager-3.png",
+      "subject": "Man in muted mustard shirt and dark peci",
+      "targetSize": [
+        192,
+        256
+      ],
+      "displayWidth": 64,
+      "pivot": [
+        0.5,
+        1
+      ],
+      "requiresAlpha": true,
+      "frames": 1,
+      "status": "ready",
+      "source": "output/imagegen/villager-3/generated-cmvuszyv9008vt60fihy2fyny.jpg",
+      "license": "AI-generated with Bumi Digital; provider terms apply.",
+      "generationId": "cmvuszyv9008vt60fihy2fyny",
+      "promptFile": "prompts/villager-3.txt",
+      "creditsUsed": 0.4,
+      "sha256": "0c20d1f04224b73d34d791e5dc646ae11e346eb9ac4b9f408425b94421495d2d",
+      "validation": {
+        "format": "PNG",
+        "dimensions": [
+          192,
+          256
+        ],
+        "realAlpha": true,
+        "completeSilhouette": true,
+        "visualReview": "Reviewed on dark and sage backgrounds; browser checked at desktop1440px and mobile390px.",
+        "visibleBounds": [
+          59,
+          12,
+          132,
+          244
+        ]
+      },
+      "normalization": "Magenta chroma key via bundled remove_chroma_key.py, soft thresholds35/130, despill, alpha crop and bottom-center normalization.",
+      "animation": {
+        "engine": "css-cutout-rig",
+        "source": "src/walk.js",
+        "states": [
+          "walk"
+        ],
+        "note": "Manually rigged original Bumi artwork; not a generated walking atlas."
+      }
+    },
+    {
+      "file": "villager-4.png",
+      "subject": "Woman in dusty blue blouse with dark tied hair",
+      "targetSize": [
+        192,
+        256
+      ],
+      "displayWidth": 64,
+      "pivot": [
+        0.5,
+        1
+      ],
+      "requiresAlpha": true,
+      "frames": 1,
+      "status": "ready",
+      "source": "output/imagegen/villager-4/generated-cmvuszyv9008tt60fiwkmrsce.jpg",
+      "license": "AI-generated with Bumi Digital; provider terms apply.",
+      "generationId": "cmvuszyv9008tt60fiwkmrsce",
+      "promptFile": "prompts/villager-4.txt",
+      "creditsUsed": 0.4,
+      "sha256": "e21d1980b263e6d48aeb74d365934bf81218f9bb0f9824b236215bfb1185836b",
+      "validation": {
+        "format": "PNG",
+        "dimensions": [
+          192,
+          256
+        ],
+        "realAlpha": true,
+        "completeSilhouette": true,
+        "visualReview": "Reviewed on dark and sage backgrounds; browser checked at desktop1440px and mobile390px.",
+        "visibleBounds": [
+          61,
+          12,
+          130,
+          244
+        ]
+      },
+      "normalization": "Magenta chroma key via bundled remove_chroma_key.py, soft thresholds35/130, despill, alpha crop and bottom-center normalization.",
+      "animation": {
+        "engine": "css-cutout-rig",
+        "source": "src/walk.js",
+        "states": [
+          "walk"
+        ],
+        "note": "Manually rigged original Bumi artwork; not a generated walking atlas."
+      }
+    }
+  ]
+}

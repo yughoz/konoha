@@ -1,0 +1,19 @@
+{
+  "provider": "Bumi Digital",
+  "model": "OpenAI/gpt-image-2.5-flare",
+  "generation_id": "cmvv24d8l00rft60fwwa0378s",
+  "parameters": {
+    "prompt": "Create a traditional hand-drawn 4-frame walking sprite animation as FOUR complete figures evenly spaced in ONE horizontal row on pure flat bright magenta #FF00FF. Use the attached character as the EXACT design reference. Preserve his face, short black hair, terracotta shirt, cream trousers, brown sandals, medium-brown skin, body proportions, and warm storybook illustration style.\n\nFixed front-three-quarter camera, character facing toward screen LEFT (nose toward the left edge, face visible). Four phases of ONE complete walking cycle, exactly in this order:\n1. LEFT FOOT FORWARD contacting ground with heel, RIGHT FOOT BACK pushing off toes; right arm forward and left arm back.\n2. LEFT FOOT UNDER HIPS bearing weight, RIGHT KNEE LIFTED and right foot passing forward through center; arms near center.\n3. RIGHT FOOT FORWARD contacting ground with heel, LEFT FOOT BACK pushing off toes; left arm forward and right arm back. Swap BOTH leg positions and arm positions from frame1. The NEAR leg must be back when it was forward in frame1.\n4. RIGHT FOOT UNDER HIPS bearing weight, LEFT KNEE LIFTED and left foot passing forward through center; arms near center. Opposite leg to frame2.\n\nDo not duplicate frame1 as frame3 or frame2 as frame4: left and right legs must exchange support and forward positions. Render real distinct knee bends and ankle angles. Keep head/body center, height, scale, clothing, face, and ground line stable. Each figure complete from hair to sandals, margins around each, no overlap. Loop4->1.\nNo text, numbers, grid, panels, shadows, floor, effects, or blur. Only four character poses on magenta.",
+    "size": "16:9",
+    "resolution": "2K",
+    "quality": "low",
+    "image_urls": [
+      "https://storage.bumi.digital/generations/cmvusxygh008bt60frascg1ax.jpg"
+    ]
+  },
+  "status": "completed",
+  "documentation": "https://bumi.digital/api-docs/image",
+  "credits_used": 0.3,
+  "downloaded_file": "generated-cmvv24d8l00rft60fwwa0378s.png",
+  "bytes": 1858217
+}

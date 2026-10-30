@@ -1,0 +1,10 @@
+Create a traditional hand-drawn 4-frame walking sprite animation as FOUR complete figures evenly spaced in ONE horizontal row on pure flat bright magenta #FF00FF. Use the attached character as the EXACT design reference. Preserve his face, short black hair, terracotta shirt, cream trousers, brown sandals, medium-brown skin, body proportions, and warm storybook illustration style.
+
+Fixed front-three-quarter camera, character facing toward screen LEFT (nose toward the left edge, face visible). Four phases of ONE complete walking cycle, exactly in this order:
+1. LEFT FOOT FORWARD contacting ground with heel, RIGHT FOOT BACK pushing off toes; right arm forward and left arm back.
+2. LEFT FOOT UNDER HIPS bearing weight, RIGHT KNEE LIFTED and right foot passing forward through center; arms near center.
+3. RIGHT FOOT FORWARD contacting ground with heel, LEFT FOOT BACK pushing off toes; left arm forward and right arm back. Swap BOTH leg positions and arm positions from frame1. The NEAR leg must be back when it was forward in frame1.
+4. RIGHT FOOT UNDER HIPS bearing weight, LEFT KNEE LIFTED and left foot passing forward through center; arms near center. Opposite leg to frame2.
+
+Do not duplicate frame1 as frame3 or frame2 as frame4: left and right legs must exchange support and forward positions. Render real distinct knee bends and ankle angles. Keep head/body center, height, scale, clothing, face, and ground line stable. Each figure complete from hair to sandals, margins around each, no overlap. Loop4->1.
+No text, numbers, grid, panels, shadows, floor, effects, or blur. Only four character poses on magenta.

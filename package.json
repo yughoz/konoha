@@ -1,0 +1,20 @@
+{
+  "name": "desa-komen",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node test/queue.test.js && node test/walk.test.js && python3 test/generation.test.py && node tools/backend.mjs --check",
+    "backend": "node tools/backend.mjs",
+    "test:backend": "node tools/backend.mjs --install-only && python3 test/backend.test.py"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0"
+  },
+  "dependencies": {
+    "pocketbase": "^0.28.1"
+  }
+}

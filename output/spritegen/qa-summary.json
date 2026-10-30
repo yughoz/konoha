@@ -1,0 +1,34 @@
+{
+  "tool": "sprite-gen",
+  "generationProvider": "Bumi Digital",
+  "runtime": "Generated walk rows are not active. All four villagers now use a manually authored CSS cutout rig of the original Bumi PNGs (src/walk.js).",
+  "creditsReported": 2.7,
+  "failedJob": {
+    "id": "cmvv1qtxu00qbt60fqjomnzaa",
+    "model": "google/nano-banana-2.1",
+    "error": "fetch failed",
+    "credits_used": 0.6
+  },
+  "runs": [
+    {
+      "run": "villager-1-walk",
+      "motionVerdict": "fail",
+      "note": "Facing back/right; repeated support leg."
+    },
+    {
+      "run": "villager-1-walk-reroll",
+      "motionVerdict": "fail",
+      "note": "Identity improved; support leg still repeats."
+    },
+    {
+      "run": "villager-1-walk-final",
+      "motionVerdict": "experimental",
+      "note": "Clean alpha and identity; two repeating gait phases, demo only."
+    },
+    {
+      "run": "villager-1-walk-gpt",
+      "motionVerdict": "fail",
+      "note": "Repeated gait and extra arm in passing poses."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+Draw FOUR full-body animation poses in ONE horizontal row. This is one complete walk cycle of the SAME person in the attached reference image. Keep the exact character identity: same face, hair, skin tone, shirt/blouse, trousers/skirt, shoes/sandals, proportions, palette, outline and illustration style.
+
+Keep a fixed front three-quarter view angled gently toward screen-left so the face remains visible in every frame. Never show the back or a profile. Keep camera, lighting, scale, torso/head position, and foot ground baseline fixed across all poses.
+
+Pose 1: left leg reaches forward toward screen-left while right leg supports behind; right arm swings forward.
+Pose 2: left leg is vertical under the body bearing weight; right knee bends and passes beside it, right foot lifted.
+Pose 3: right leg reaches forward toward screen-left while left leg supports behind; left arm swings forward. This is the opposite support leg to pose 1.
+Pose 4: right leg is vertical under the body bearing weight; left knee bends and passes beside it, left foot lifted.
+
+These are four visibly different chronological walk phases, not a bob or repeated standing pose. Use real knee bending, opposite foot contacts and counter-swinging arms. One complete uncropped person in each invisible equal slot, with no overlap. Frame 4 must flow into frame 1 for a clean loop.
+
+Background: perfectly flat solid bright magenta #FF00FF across every pixel. No floor, shadows, dust, speed lines, symbols, text, labels, visible grid, watermark or extra objects. Output only the four-pose sprite strip.

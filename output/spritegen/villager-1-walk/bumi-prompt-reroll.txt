@@ -1,0 +1,9 @@
+Create one horizontal 8-frame walk-cycle sprite strip using the attached reference image as the exact character identity.
+
+Character: the same adult Indonesian man from the reference: medium warm-brown skin, short dark hair, muted terracotta short-sleeve shirt, warm cream trousers, simple dark brown sandals. Preserve his face, eyes, smile, hair shape, clothing colors, body proportions, outline weight, and storybook illustration style exactly.
+
+Camera and facing are locked: front three-quarter view turned gently toward the upper-left of the image. The face must be clearly visible in every frame, with both eyes or the same visible facial features. Never show the character's back, rear three-quarter view, or a profile. Keep the same camera, scale, lighting, and ground baseline in all 8 frames.
+
+Show a real 8-frame walk cycle toward the upper-left with alternating foot contacts and counter-swinging arms. Frame phases: 1 right-foot contact, 2 passing, 3 left-foot contact, 4 passing, 5 right-foot contact, 6 passing, 7 left-foot contact, 8 passing/near frame 1 for a seamless loop. Legs, feet, and sandals must visibly change between phases; this must not be a static bob. Keep the torso and face stable while the limbs animate. Include one complete body per panel, full head to sandals, no clipping, no overlap between panels.
+
+Layout: eight equal invisible panels left to right, one pose per panel, evenly spaced across a wide horizontal canvas. Flat pure magenta #FF00FF background across every pixel, no shadows, floor, dust, speed lines, text, labels, grid, watermark, or extra objects. Output only the sprite strip.
