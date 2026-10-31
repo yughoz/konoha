@@ -68,6 +68,8 @@
 
           <div id="village-scene" class="village-scene" aria-label="Ilustrasi desa dan warga yang mengantre">
             <div id="world" class="world">
+              <canvas id="world-canvas" class="world-canvas" aria-label="Desa 3D dan antrean warga"></canvas>
+              <div id="world-fallback" class="world-fallback" aria-hidden="true">WebGL tidak tersedia; tampilan cadangan sedang digunakan.</div>
               <img class="world-background" src="/assets/background.png" alt="" onload="this.parentElement.classList.add('has-background')" onerror="this.hidden=true" />
               <div class="ground-texture" aria-hidden="true"></div>
               <div class="grass-patch patch-one" aria-hidden="true"></div><div class="grass-patch patch-two" aria-hidden="true"></div><div class="grass-patch patch-three" aria-hidden="true"></div>

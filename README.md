@@ -2,6 +2,10 @@
 
 Desa interaktif dari komentar Instagram: warga mengantre di depan rumah Pak Kades, lalu pulang setelah admin membalas. Frontend Vite, data dan login admin di PocketBase, komentar serta balasan asli melalui Repliz. Warga tidak perlu login.
 
+## Dunia 3D
+
+Scene desa sekarang memakai Three.js dengan kamera isometric dan mesh low-poly procedural untuk rumah Pak Kades, jalan, tanah, pohon, semak, dan warga. Komentar tampil sebagai bubble 3D di atas kepala warga. Antrean mengikuti urutan PocketBase; setelah balasan berhasil, warga berjalan pulang selama 5,4 detik. Panel admin tetap HTML agar login, keyboard, dan balasan tetap mudah digunakan. Browser tanpa WebGL memakai scene 2D sebagai fallback.
+
 ## Jalankan lokal
 
 Gunakan Node.js 22.16+ dan `unzip` (sudah tersedia di macOS).

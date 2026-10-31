@@ -2,6 +2,7 @@ import './style.css';
 import { emptyState, queue, history, departedComments, sourceUrl } from './queue.js';
 import { pb, snapshot, syncComments, sendReply, errorMessage } from './api.js';
 import { walkRig } from './walk.js';
+import { scene3d } from './scene3d.js';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -26,6 +27,23 @@ let refreshAgain = false;
 const mobileLayout = matchMedia('(max-width: 780px)');
 const panel = $('.conversation-panel');
 let drawerReturnFocus;
+let sceneReady = false;
+let previousSceneWaiting = [];
+let sceneError = '';
+
+function initScene3d() {
+  try {
+    const result = scene3d.init($('#world'));
+    sceneReady = result !== false;
+    $('#world').classList.toggle('is-3d', sceneReady);
+    if (sceneReady) window.addEventListener('resize', () => scene3d.resize(), { passive: true });
+  } catch (error) {
+    sceneReady = false;
+    sceneError = 'WebGL tidak tersedia; tampilan cadangan digunakan.';
+    $('#world').classList.remove('is-3d');
+    console.warn('3D scene unavailable', error);
+  }
+}
 
 function setDrawer(open, restoreFocus = true) {
   const modal = mobileLayout.matches && open;
@@ -183,9 +201,19 @@ function renderList(waiting, answered) {
 }
 
 function renderScene(waiting) {
-  // Layout mengikuti jalur menuju rumah; data antrean tetap utuh meski hanya 8 warga yang ditampilkan.
   const capacity = mobileLayout.matches ? 4 : 8;
   const visible = [...(exiting ? [exiting] : []), ...departures, ...waiting].slice(0, capacity);
+  if (sceneReady) {
+    // The active departure owns its mesh until the 5.4s animation ends; excluding it here prevents a late refresh from recreating a removed mesh.
+    scene3d.setVillagers([...departures, ...waiting].slice(0, capacity));
+    previousSceneWaiting = waiting.slice(0, capacity);
+    $('#scene-empty').hidden = waiting.length > 0 || Boolean(exiting) || departures.length > 0;
+    const remaining = Math.max(0, state.pendingTotal + departures.length + (exiting ? 1 : 0) - capacity);
+    $('#more-count').hidden = remaining === 0;
+    $('#more-count').textContent = `+${remaining} warga lainnya`;
+    return;
+  }
+  // CSS scene remains the fallback when WebGL cannot initialize.
   const ids = new Set(visible.map(comment => comment.id));
   for (const [id, element] of villagers) {
     if (!ids.has(id) && id !== exiting?.id) {
@@ -229,12 +257,12 @@ function renderScene(waiting) {
     element.classList.toggle('is-staggered', index % 2 === 1);
     element.style.setProperty('--walk-delay', `${index * -0.17}s`);
   });
+  previousSceneWaiting = waiting.slice(0, capacity);
   $('#scene-empty').hidden = waiting.length > 0 || Boolean(exiting);
   const remaining = Math.max(0, state.pendingTotal + departures.length + (exiting ? 1 : 0) - capacity);
   $('#more-count').hidden = remaining === 0;
   $('#more-count').textContent = `+${remaining} warga lainnya`;
 }
-
 function render() {
   const waiting = queue(state);
   const head = waiting[0];
@@ -288,36 +316,42 @@ function animateReply(comment) {
   exiting = comment;
   $('#head-bubble').textContent = comment.reply || 'Sudah selesai di sumber';
   $('#head-bubble').hidden = false;
-  const element = villagers.get(comment.id);
-  stopWalking(element);
-  element?.classList.add('is-leaving');
   const duration = reducedMotion.matches ? 350 : 5400;
-  if (element && !reducedMotion.matches) {
-    const rect = $('#world').getBoundingClientRect();
-    element.animate([
-      { translate: '0px 0px', opacity: 1, offset: 0 },
-      { translate: '0px 0px', opacity: 1, offset: 1100 / duration },
-      { translate: `${rect.width * 0.16}px ${rect.height * 0.08}px`, opacity: 1, offset: 0.42 },
-      { translate: `${rect.width * 0.38}px ${rect.height * 0.25}px`, opacity: 1, offset: 0.69 },
-      { translate: `${rect.width * 0.59}px ${rect.height * 0.45}px`, opacity: 1, offset: 0.94 },
-      { translate: `${rect.width * 0.64}px ${rect.height * 0.5}px`, opacity: 0, offset: 1 },
-    ], { duration, easing: 'linear', fill: 'forwards' });
-    departureWalkTimer = setTimeout(() => startWalking(element, duration - 1100), 1100);
+  if (sceneReady) {
+    scene3d.depart(comment.id, comment.reply || 'Sudah selesai di sumber');
+  } else {
+    const element = villagers.get(comment.id);
+    stopWalking(element);
+    element?.classList.add('is-leaving');
+    if (element && !reducedMotion.matches) {
+      const rect = $('#world').getBoundingClientRect();
+      element.animate([
+        { translate: '0px 0px', opacity: 1, offset: 0 },
+        { translate: '0px 0px', opacity: 1, offset: 1100 / duration },
+        { translate: `${rect.width * 0.16}px ${rect.height * 0.08}px`, opacity: 1, offset: 0.42 },
+        { translate: `${rect.width * 0.38}px ${rect.height * 0.25}px`, opacity: 1, offset: 0.69 },
+        { translate: `${rect.width * 0.59}px ${rect.height * 0.45}px`, opacity: 1, offset: 0.94 },
+        { translate: `${rect.width * 0.64}px ${rect.height * 0.5}px`, opacity: 0, offset: 1 },
+      ], { duration, easing: 'linear', fill: 'forwards' });
+      departureWalkTimer = setTimeout(() => startWalking(element, duration - 1100), 1100);
+    }
   }
   exitTimer = setTimeout(() => {
     clearTimeout(departureWalkTimer);
-    stopWalking(element);
-    element?.remove();
-    villagers.delete(comment.id);
+    if (!sceneReady) {
+      const element = villagers.get(comment.id);
+      stopWalking(element);
+      element?.remove();
+      villagers.delete(comment.id);
+    }
     exiting = null;
     $('#head-bubble').hidden = true;
     if (departures.length) animateReply(departures.shift());
     render();
   }, duration);
 }
-
 function applyState(next) {
-  const visibleBefore = queue(state).filter(comment => villagers.has(comment.id));
+  const visibleBefore = sceneReady ? previousSceneWaiting : queue(state).filter(comment => villagers.has(comment.id));
   departures.push(...departedComments(visibleBefore, next.waiting, next.completed, [...departures, ...(exiting ? [exiting] : [])]));
   state = next;
   if (!exiting && departures.length) animateReply(departures.shift());
@@ -468,5 +502,6 @@ setInterval(() => { if (!document.hidden) refresh(); }, 15000);
 if (pb.authStore.isValid) pb.collection('admins').authRefresh().catch(error => { if ([400, 401, 403].includes(error.status)) pb.authStore.clear(); });
 $('#panel-tabs [data-tab="history"]').tabIndex = -1;
 setDrawer(false, false);
+initScene3d();
 render();
 refresh();
