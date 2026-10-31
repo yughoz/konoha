@@ -8,6 +8,18 @@ const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const villagers = new Map();
 const walking = new Map();
+const simulation = new URLSearchParams(location.search).get('simulasi') === '1';
+const simulationSamples = [
+  ['Budi Santoso', 'Pak Kades, boleh bikin taman bunga di sini?'],
+  ['Siti Aminah', 'Usul warung kopi supaya warga bisa ngobrol sore.'],
+  ['Agus Pratama', 'Lapangan bola kecil seru juga, Pak!'],
+  ['Dewi Lestari', 'Pengen ada kebun sayur di sebelah rumah.'],
+  ['Rizky Ramadhan', 'Jalan desanya kasih lampu ya, Pak Kades.'],
+  ['Nina Kartika', 'Mau buka toko roti di desa ini.'],
+];
+let simulationComments = [];
+let simulationIndex = 0;
+let simulationTimer = null;
 let state = emptyState();
 let admin = false;
 let connected = false;
@@ -78,6 +90,7 @@ function toast(message) {
 }
 
 async function refresh() {
+  if (simulation) { renderSimulation(); return; }
   if (refreshing) { refreshAgain = true; return refreshing; }
   refreshing = (async () => {
     do {
@@ -300,6 +313,22 @@ function render() {
   $('#storage-note').hidden = !note;
   $('#storage-note').textContent = note;
   $('#sync-login-note').hidden = admin;
+  $('#sync-button').hidden = simulation;
+  $('#sim-button').hidden = false;
+  $('#sim-reset').hidden = !simulation;
+  $('#sim-button').textContent = simulation ? simulationTimer ? 'Hentikan simulasi' : 'Mulai simulasi' : 'Coba simulasi 3D';
+  if (simulation) {
+    $('#sim-status').textContent = simulationTimer ? 'Simulasi berjalan' : 'Mode simulasi';
+    $('#connection-label').textContent = 'Simulasi lokal';
+    $('#sync-label').textContent = 'Tambah warga';
+    $('#sync-title').textContent = 'Coba desa 3D tanpa koneksi.';
+    $('#sync-hint').textContent = 'Warga datang tiap 3 detik saat simulasi berjalan. Balasan hanya lokal, tidak dikirim ke Instagram.';
+    $('#reply-submit').firstChild.textContent = 'Balas simulasi ';
+    $('#scene-start').lastChild.textContent = 'Tambah warga pertama';
+    $('#logout').firstChild.textContent = 'Keluar simulasi ';
+    $('#storage-note').hidden = false;
+    $('#storage-note').textContent = 'MODE SIMULASI — semua komentar dan balasan hanya di memori browser ini; tidak ada koneksi PocketBase atau Repliz.';
+  }
   for (const type of ['queue', 'history']) {
     const page = state[`${type}Page`];
     const pages = state[`${type}Pages`];
@@ -358,7 +387,56 @@ function applyState(next) {
   render();
 }
 
+
+function renderSimulation(completed = []) {
+  const waiting = simulationComments.filter(comment => comment.status === 'pending');
+  queuePage = Math.min(queuePage, Math.max(1, Math.ceil(waiting.length / 50)));
+  const answered = simulationComments.filter(comment => comment.status === 'answered').slice().reverse();
+  historyPage = Math.min(historyPage, Math.max(1, Math.ceil(answered.length / 50)));
+  const next = {
+    ...emptyState(),
+    waiting: waiting.slice(0, 8), queueItems: waiting.slice((queuePage - 1) * 50, queuePage * 50),
+    answered: answered.slice((historyPage - 1) * 50, historyPage * 50),
+    pendingTotal: waiting.length, answeredTotal: answered.length,
+    queuePage, historyPage, queuePages: Math.max(1, Math.ceil(waiting.length / 50)), historyPages: Math.max(1, Math.ceil(answered.length / 50)),
+    connection: { configured: true, lastSync: new Date().toISOString(), syncing: false }, completed,
+  };
+  connected = true;
+  admin = true;
+  connectionError = '';
+  applyState(next);
+}
+
+function addSimulationComment() {
+  if (!simulation) return;
+  const [name, text] = simulationSamples[simulationIndex % simulationSamples.length];
+  simulationIndex++;
+  simulationComments.push({ id: `simulation-${simulationIndex}`, name, text, status: 'pending', reply: null, repliedAt: null, queueOrder: simulationIndex, sourceUrl: '' });
+  renderSimulation();
+}
+
+function stopSimulation() {
+  clearInterval(simulationTimer);
+  simulationTimer = null;
+}
+
+function resetSimulation() {
+  stopSimulation();
+  clearTimeout(exitTimer);
+  clearTimeout(departureWalkTimer);
+  departures.length = 0;
+  exiting = null;
+  simulationComments = [];
+  simulationIndex = 0;
+  queuePage = historyPage = 1;
+  $('#head-bubble').hidden = true;
+  previousSceneWaiting = [];
+  if (sceneReady) { scene3d.dispose(); sceneReady = false; initScene3d(); }
+  renderSimulation();
+}
+
 $('#sync-button').addEventListener('click', async () => {
+  if (simulation) { addSimulationComment(); return; }
   if (!admin || syncBusy) return;
   syncBusy = true;
   render();
@@ -392,6 +470,7 @@ $('#login-form').addEventListener('submit', async event => {
   button.disabled = true;
   $('#login-error').textContent = '';
   try {
+    if (simulation) { $('#login-dialog').close(); admin = true; setDrawer(true); render(); return; }
     await pb.collection('admins').authWithPassword($('#username').value.trim(), $('#password').value);
     $('#login-dialog').close();
     $('#login-form').reset();
@@ -403,6 +482,7 @@ $('#login-form').addEventListener('submit', async event => {
   } finally { button.disabled = false; }
 });
 $('#logout').addEventListener('click', () => {
+  if (simulation) { window.location.search = ''; return; }
   pb.authStore.clear();
   $('#reply-input').value = '';
   toast('Sudah keluar dari ruang Pak Kades.');
@@ -420,12 +500,20 @@ $('#reply-form').addEventListener('submit', async event => {
   replyBusy = true;
   render();
   try {
+    if (simulation) {
+      const comment = simulationComments.find(item => item.id === target);
+      if (!comment || comment.status !== 'pending' || !text.trim() || text.trim().length > 500) throw new Error('Isi balasan wajib diisi, maksimal 500 karakter.');
+      comment.status = 'answered'; comment.reply = text.trim(); comment.repliedAt = Date.now();
+      renderSimulation([{ ...comment }]);
+      toast('Balasan simulasi tersimpan lokal. Tidak dikirim ke Instagram.');
+      return;
+    }
     const result = await sendReply(target, text);
     await refresh();
     toast(result.comment?.externalReplyId ? 'Balasan terkirim ke Instagram.' : 'Komentar sudah selesai di Instagram.');
   } catch (error) {
-    if (error.status === 401) pb.authStore.clear();
-    $('#reply-error').textContent = errorMessage(error);
+    if (!simulation && error.status === 401) pb.authStore.clear();
+    $('#reply-error').textContent = simulation ? error.message : errorMessage(error);
     await refresh();
   } finally { replyBusy = false; render(); }
 });
@@ -454,7 +542,15 @@ $('#panel-tabs').addEventListener('keydown', event => {
 $('#mobile-panel-open').addEventListener('click', () => setDrawer(true));
 $('#panel-close').addEventListener('click', () => setDrawer(false));
 $('#drawer-backdrop').addEventListener('click', () => setDrawer(false));
-$('#scene-start').addEventListener('click', () => window.open('https://www.instagram.com/nekoding.xyz/', '_blank', 'noopener,noreferrer'));
+$('#scene-start').addEventListener('click', () => simulation ? addSimulationComment() : window.open('https://www.instagram.com/nekoding.xyz/', '_blank', 'noopener,noreferrer'));
+$('#sim-button').addEventListener('click', () => {
+  if (!simulation) { const url = new URL(location.href); url.searchParams.set('simulasi', '1'); location.href = url.href; return; }
+  if (simulationTimer) stopSimulation();
+  else { addSimulationComment(); simulationTimer = setInterval(addSimulationComment, 3000); }
+  render();
+});
+$('#sim-reset').addEventListener('click', resetSimulation);
+window.addEventListener('pagehide', stopSimulation);
 panel.addEventListener('keydown', event => {
   if (!mobileLayout.matches || !panel.classList.contains('is-open')) return;
   if (event.key === 'Escape') { event.preventDefault(); setDrawer(false); }
@@ -487,21 +583,29 @@ for (const type of ['queue', 'history']) {
   }
 }
 
-pb.authStore.onChange(() => {
-  admin = pb.authStore.isValid && pb.authStore.record?.collectionName === 'admins';
-  render();
-}, true);
-pb.realtime.onDisconnect = () => { connected = false; render(); };
-pb.collection('comments').subscribe('*', () => refresh()).catch(() => {});
-pb.realtime.subscribe('PB_CONNECT', () => refresh()).catch(() => {});
-window.addEventListener('online', () => refresh());
-window.addEventListener('pageshow', () => refresh());
-document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
-// ponytail: snapshot tiap 15 detik memulihkan event SSE yang terlewat; ganti cursor saat trafik desa membesar.
-setInterval(() => { if (!document.hidden) refresh(); }, 15000);
-if (pb.authStore.isValid) pb.collection('admins').authRefresh().catch(error => { if ([400, 401, 403].includes(error.status)) pb.authStore.clear(); });
+if (!simulation) {
+  pb.authStore.onChange(() => {
+    admin = pb.authStore.isValid && pb.authStore.record?.collectionName === 'admins';
+    render();
+  }, true);
+  pb.realtime.onDisconnect = () => { connected = false; render(); };
+  pb.collection('comments').subscribe('*', () => refresh()).catch(() => {});
+  pb.realtime.subscribe('PB_CONNECT', () => refresh()).catch(() => {});
+  window.addEventListener('online', () => refresh());
+  window.addEventListener('pageshow', () => refresh());
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  // ponytail: snapshot tiap 15 detik memulihkan event SSE yang terlewat; ganti cursor saat trafik desa membesar.
+  setInterval(() => { if (!document.hidden) refresh(); }, 15000);
+  if (pb.authStore.isValid) pb.collection('admins').authRefresh().catch(error => { if ([400, 401, 403].includes(error.status)) pb.authStore.clear(); });
+}
 $('#panel-tabs [data-tab="history"]').tabIndex = -1;
 setDrawer(false, false);
 initScene3d();
-render();
-refresh();
+if (simulation) {
+  for (let index = 0; index < 3; index++) addSimulationComment();
+  simulationTimer = setInterval(addSimulationComment, 3000);
+  render();
+} else {
+  render();
+  refresh();
+}

@@ -97,3 +97,4 @@
 .world:not(.is-3d) .world-fallback{display:block}
 .world.is-3d .world-fallback{display:none}
 @media(prefers-reduced-motion:reduce){.world-canvas{image-rendering:auto}}
+.simulation-actions{flex-wrap:wrap}.simulation-actions #sim-button{min-width:150px}.simulation-actions #sim-reset{font-size:10px;min-height:38px}
