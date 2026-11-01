@@ -125,7 +125,9 @@ function buildReception() {
   pakKades = person;
 
   const board = buildBaleBoard();
-  board.position.set(3.8, 0, -0.02);
+  board.position.set(3.25, 0, 0.42);
+  board.rotation.y = -0.22;
+  board.rotation.z = 0.025;
   group.add(board);
   totalBoard = board.userData.plaque;
   updateTotalBoard(totalFollowers);
@@ -148,6 +150,7 @@ function buildBaleBoard() {
   group.add(roof);
   const plaque = createTotalBoard();
   plaque.position.set(0, 2.1, 0.13);
+  plaque.material.rotation = -0.035;
   group.add(plaque);
   group.userData.plaque = plaque;
   return group;
