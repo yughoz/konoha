@@ -301,6 +301,13 @@ function render() {
   $('#reply-count').textContent = `${$('#reply-input').value.length}/500`;
   $('#admin-open').setAttribute('aria-label', admin ? 'Buka panel Pak Kades' : 'Masuk sebagai Pak Kades');
   const connection = state.connection;
+  // Keep the low-poly scene's sign in sync with the provider statistic. The
+  // board gracefully shows an em dash until the first successful refresh.
+  const followerValue = connection?.followersCount;
+  scene3d.setTotalFollowers(followerValue);
+  const followerCount = Number(followerValue);
+  $('#followers-total').textContent = Number.isFinite(followerCount) && followerCount >= 0
+    ? new Intl.NumberFormat('id-ID').format(followerCount) : '—';
   $('#sync-button').disabled = !admin || !connected || syncBusy || Boolean(connection?.syncing) || !connection?.configured;
   $('#sync-label').textContent = syncBusy || connection?.syncing ? 'Menyinkronkan…' : 'Sinkronkan sekarang';
   const instagramReady = connected && connection?.configured && connection?.lastSync && !connection?.error;
@@ -399,7 +406,7 @@ function renderSimulation(completed = []) {
     answered: answered.slice((historyPage - 1) * 50, historyPage * 50),
     pendingTotal: waiting.length, answeredTotal: answered.length,
     queuePage, historyPage, queuePages: Math.max(1, Math.ceil(waiting.length / 50)), historyPages: Math.max(1, Math.ceil(answered.length / 50)),
-    connection: { configured: true, lastSync: new Date().toISOString(), syncing: false }, completed,
+    connection: { configured: true, lastSync: new Date().toISOString(), syncing: false, followersCount: 1280 }, completed,
   };
   connected = true;
   admin = true;

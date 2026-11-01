@@ -98,3 +98,36 @@
 .world.is-3d .world-fallback{display:none}
 @media(prefers-reduced-motion:reduce){.world-canvas{image-rendering:auto}}
 .simulation-actions{flex-wrap:wrap}.simulation-actions #sim-button{min-width:150px}.simulation-actions #sim-reset{font-size:10px;min-height:38px}
+
+/* Readability pass: the village is designed to be read at a glance on a
+   laptop, so labels and queue copy keep a comfortable minimum size. */
+.scene-title{font-size:13px}
+.scene-weather{font-size:12px}
+.status-chip{font-size:11px}
+.scene-footer{font-size:11px}
+.queue-section-label{font-size:9px}
+.queue-section-label>span:last-child:not(:first-child){font-size:9px}
+.queue-name{font-size:14px}
+.queue-text{font-size:12px}
+.queue-number{font-size:11px}
+.panel-tab{font-size:13px}
+.panel-heading h2{font-size:23px}
+.panel-heading p{font-size:11px}
+.locked-state p{font-size:11px}
+.reply-area form>label{font-size:10px}
+.reply-area textarea{font-size:13px}
+.simulation-copy p{font-size:11px}
+.bubble-name{font-size:8px}
+.bubble-text{font-size:10px}
+.followers-board{position:absolute;left:63%;top:33%;z-index:4;display:flex;flex-direction:column;align-items:center;min-width:112px;padding:8px 13px 7px;background:#fff8dc;border:2px solid #79583f;border-radius:7px;box-shadow:3px 4px 0 #5b704d22;transform:rotate(2deg);color:#5b704d;text-align:center;pointer-events:none}
+.followers-board strong{font-size:9px;letter-spacing:1px}
+.followers-board span{font-family:var(--serif);font-size:27px;line-height:1.05;color:#2e573e}
+.followers-board small{font-size:8px;color:#8b987c}
+.world.is-3d .followers-board{visibility:hidden}
+.reception-fallback{position:absolute;left:38%;top:31%;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:27%;height:24%;padding-bottom:8px;background:linear-gradient(#fff8dc 0 22%,#79583f 23% 100%);border:2px solid #79583f;border-radius:6px;box-shadow:4px 5px 0 #5b704d22;color:#fff8dc;text-align:center;pointer-events:none}
+.reception-fallback:before{content:"";position:absolute;left:10%;right:10%;bottom:18%;height:8%;background:#c5a77b;border-radius:2px}
+.reception-fallback strong{position:absolute;top:7%;color:#5b704d;font-size:clamp(7px,1vw,12px);letter-spacing:1px}
+.reception-fallback span{font-size:clamp(7px,1vw,11px);letter-spacing:1px}
+.world.is-3d .reception-fallback{visibility:hidden}
+@media(max-width:780px){.followers-board{left:62%;top:34%;min-width:96px;padding:7px 10px 6px}.followers-board strong{font-size:8px}.followers-board span{font-size:23px}.followers-board small{font-size:7px}}
+@media(max-width:480px){.followers-board{left:59%;top:34%;min-width:84px;padding:6px 8px}.followers-board strong{font-size:6px;letter-spacing:.8px}.followers-board span{font-size:20px}.followers-board small{font-size:6px}.reception-fallback{left:31%;top:32%;width:38%;height:23%}}

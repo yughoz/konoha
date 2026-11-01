@@ -17,6 +17,8 @@ function status(app) {
     configured: /^Basic [A-Za-z0-9+/]+=*$/.test(config().authorization),
     lastSync: record.getString("lastSync"),
     syncing: record.getBool("syncing") && record.getFloat("leaseUntil") > Date.now(),
+    followersCount: Math.max(0, record.getInt("followersCount")),
+    followersUpdatedAt: record.getString("followersUpdatedAt"),
   };
   if (record.getString("error")) result.error = record.getString("error");
   return result;
@@ -65,6 +67,25 @@ function request(cfg, method, path, body) {
     headers: { Authorization: cfg.authorization, Accept: "application/json", "Content-Type": "application/json" },
     body: body === undefined ? "" : JSON.stringify(body),
   });
+}
+
+function followersCount(json) {
+  if (!json || typeof json !== "object") return null;
+  const candidates = [json.instagram, json.Instagram, json.profile, json.account, json];
+  for (const value of candidates) {
+    const count = value && Number(value.followersCount);
+    if (Number.isSafeInteger(count) && count >= 0) return count;
+  }
+  return null;
+}
+
+function syncFollowers(app, cfg) {
+  const response = request(cfg, "GET", "/public/account/" + encodeURIComponent(cfg.accountId) + "/statistic");
+  if (response.statusCode !== 200 || !response.json) throw new Error("followers response failed");
+  const count = followersCount(response.json);
+  if (count === null) throw new Error("followers value missing");
+  saveSync(app, { followersCount: count, followersUpdatedAt: new Date().toISOString() });
+  return count;
 }
 
 function normalize(doc, cfg) {
@@ -118,6 +139,8 @@ function sync(app) {
       if (response.json.hasNextPage !== true || !Number.isInteger(response.json.nextPage) || response.json.nextPage <= page) throw new Error("invalid pagination");
       page = response.json.nextPage;
     }
+    // Followers are presentation data; a provider statistic failure must not block comment sync.
+    try { syncFollowers(app, cfg); } catch (error) { console.log("Repliz followers belum berhasil disinkronkan."); }
     const values = Object.keys(docs).map((id) => docs[id]).sort((a, b) => a.sourceCreatedAt.localeCompare(b.sourceCreatedAt) || a.replizId.localeCompare(b.replizId));
     app.runInTransaction((tx) => {
       const latest = tx.findRecordsByFilter("comments", "", "-queueOrder", 1);

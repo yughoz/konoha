@@ -32,6 +32,7 @@ class ReplizStub(BaseHTTPRequestHandler):
     fail_page = None
     post_result = {"status": 200, "body": {"commentId": "reply-stub"}}
     post_count = 0
+    followers = 4321
 
     def log_message(self, *_args):
         pass
@@ -45,6 +46,8 @@ class ReplizStub(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_GET(self):
+        if self.path.startswith("/public/account/") and self.path.endswith("/statistic"):
+            return self.send_json(200, {"Instagram": {"followersCount": 4321}})
         query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
         page = int(query.get("page", ["1"])[0])
         if self.fail_page == page:
@@ -161,11 +164,14 @@ class BackendTest(unittest.TestCase):
         result = self.sync()
         self.assertEqual(result.get("_status"), None, result)
         self.assertEqual(result["imported"], 131)
+        self.assertEqual(result["followersCount"], 4321)
         rows = self.request("GET", "/api/collections/comments/records?perPage=200", auth=False)
         self.assertEqual(rows["totalItems"], 131)
         self.assertEqual(rows["items"][0]["queueOrder"], 1)
         denied = self.request("POST", "/api/collections/comments/records", {"text": "x"}, auth=False)
         self.assertIn(denied["_status"], (400, 403))
+        status = self.request("GET", "/api/desa/status", auth=False)
+        self.assertEqual(status["followersCount"], 4321)
 
     def test_resolved_is_history_without_fabricated_reply(self):
         ReplizStub.docs[0]["status"] = "resolved"

@@ -23,6 +23,9 @@ let scene;
 let camera;
 let root;
 let villagersRoot;
+let pakKades;
+let totalBoard;
+let totalFollowers = null;
 let frame = 0;
 let resizeObserver;
 let lastTime = 0;
@@ -60,22 +63,116 @@ function addBox(parent, size, position, material, rotation = null) {
   return item;
 }
 
-function buildHouse() {
+// A small low-poly reception desk keeps the queue anchored to Pak Kades.
+function buildReception() {
   const group = new THREE.Group();
-  group.position.set(0, 0, -4.1);
-  group.add(addBox(group, [3.7, 2.2, 2.8], [0, 1.1, 0], materials.wall));
-  const roof = mesh(new THREE.ConeGeometry(2.9, 1.45, 4), materials.roof);
-  roof.rotation.y = Math.PI / 4;
-  roof.position.y = 2.9;
-  group.add(roof);
-  addBox(group, [0.72, 1.18, 0.12], [0, 0.6, 1.42], materials.wood);
-  for (const x of [-1.12, 1.12]) {
-    addBox(group, [0.72, 0.62, 0.12], [x, 1.35, 1.42], materials.window);
-    addBox(group, [0.08, 0.62, 0.14], [x, 1.35, 1.48], materials.wood, [0, 0, 0]);
+  // The counter sits on the path so the line can visibly reach it.
+  group.position.set(0, 0, 1.05);
+  const counter = new THREE.Group();
+  addBox(counter, [3.55, 1.15, 0.72], [0, 0.62, 0], materials.wood);
+  addBox(counter, [3.85, 0.16, 0.95], [0, 1.28, 0.02], materials.wall);
+  addBox(counter, [2.65, 0.12, 0.8], [0, 1.42, 0.02], materials.roof);
+  addBox(counter, [0.1, 0.82, 0.76], [-1.55, 0.7, 0], materials.roof);
+  addBox(counter, [0.1, 0.82, 0.76], [1.55, 0.7, 0], materials.roof);
+  group.add(counter);
+
+  const sign = addBox(group, [2.35, 0.38, 0.08], [0, 2.14, 0.04], materials.wood);
+  sign.userData.label = 'BALAI DESA';
+
+  const person = new THREE.Group();
+  person.position.set(0, 0, -0.5);
+  const skin = mat(0xc88965);
+  const shirt = mat(0x3f6c52);
+  const dark = mat(0x2f3d35);
+  const hat = mat(0x50774e);
+  const body = mesh(new THREE.CapsuleGeometry(0.43, 0.72, 4, 8), shirt);
+  body.position.y = 1.55;
+  person.add(body);
+  const head = mesh(new THREE.SphereGeometry(0.42, 8, 6), skin);
+  head.position.y = 2.35;
+  person.add(head);
+  const hair = mesh(new THREE.SphereGeometry(0.43, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), dark);
+  hair.position.y = 2.45;
+  person.add(hair);
+  const brim = mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.12, 8), hat);
+  brim.position.y = 2.72;
+  person.add(brim);
+  const crown = mesh(new THREE.ConeGeometry(0.4, 0.5, 8), hat);
+  crown.position.y = 3.0;
+  person.add(crown);
+  const nose = mesh(new THREE.ConeGeometry(0.065, 0.16, 5), skin);
+  nose.rotation.x = Math.PI / 2;
+  nose.position.set(0, 2.3, 0.4);
+  person.add(nose);
+  for (const x of [-0.16, 0.16]) {
+    const eye = mesh(new THREE.SphereGeometry(0.045, 6, 4), dark, false, false);
+    eye.position.set(x, 2.43, 0.36);
+    person.add(eye);
   }
-  const sign = addBox(group, [2.5, 0.35, 0.08], [0, 2.12, 1.48], materials.wood);
-  sign.userData.label = 'RUMAH PAK KADES';
+  const leftArm = addBox(person, [0.17, 0.66, 0.17], [-0.55, 1.55, 0.02], shirt, [0, 0, -0.2]);
+  const rightArm = addBox(person, [0.17, 0.66, 0.17], [0.55, 1.55, 0.02], shirt, [0, 0, 0.2]);
+  leftArm.userData.idleSide = -1;
+  rightArm.userData.idleSide = 1;
+  person.userData.arms = [leftArm, rightArm];
+  const badge = addBox(person, [0.25, 0.18, 0.03], [0.23, 1.76, 0.39], materials.wall);
+  badge.userData.label = 'PAK KADES';
+  const legs = mat(0x48534b);
+  addBox(person, [0.2, 0.72, 0.2], [-0.2, 0.48, 0], legs);
+  addBox(person, [0.2, 0.72, 0.2], [0.2, 0.48, 0], legs);
+  person.userData.baseY = person.position.y;
+  person.scale.setScalar(1.15);
+  group.add(person);
+  pakKades = person;
+
+  const board = createTotalBoard();
+  board.position.set(3.8, 2.35, -0.02);
+  board.scale.setScalar(2.5);
+  group.add(board);
+  totalBoard = board;
+  updateTotalBoard(totalFollowers);
   return group;
+}
+
+function createTotalBoard() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 240;
+  const context = canvas.getContext('2d');
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(3.35, 1.55, 1);
+  sprite.renderOrder = 18;
+  sprite.userData.canvas = canvas;
+  sprite.userData.context = context;
+  sprite.userData.texture = texture;
+  return sprite;
+}
+
+function updateTotalBoard(value) {
+  if (!totalBoard) return;
+  const canvas = totalBoard.userData.canvas;
+  const context = totalBoard.userData.context;
+  const formatted = Number.isFinite(Number(value)) ? new Intl.NumberFormat('id-ID').format(Number(value)) : '—';
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = '#fff8dc';
+  context.strokeStyle = '#79583f';
+  context.lineWidth = 10;
+  roundedRect(context, 8, 8, canvas.width - 16, canvas.height - 16, 24);
+  context.fill();
+  context.stroke();
+  context.fillStyle = '#5b704d';
+  context.textAlign = 'center';
+  context.font = '700 30px DM Sans, sans-serif';
+  context.fillText('TOTAL WARGA', canvas.width / 2, 58);
+  context.fillStyle = '#2e573e';
+  context.font = '700 72px Fraunces, Georgia, serif';
+  context.fillText(formatted, canvas.width / 2, 150);
+  context.fillStyle = '#8b987c';
+  context.font = '500 20px DM Sans, sans-serif';
+  context.fillText('followers', canvas.width / 2, 190);
+  totalBoard.userData.texture.needsUpdate = true;
 }
 
 function buildTree(x, z, scale = 1) {
@@ -103,7 +200,7 @@ function buildVillage() {
   path.rotation.y = -0.12;
   path.receiveShadow = true;
   group.add(path);
-  group.add(buildHouse());
+  group.add(buildReception());
   [[-6, -3, 1.3], [6, -2, 1.2], [-6, 4, 0.9], [6, 5, 1.1], [-3.8, 5.1, 0.8], [4, 1.5, 0.7]].forEach(item => group.add(buildTree(...item)));
   for (const [x, z] of [[-4.3, -0.5], [4.5, -1], [-5, 3.1], [5.3, 3.8]]) {
     const bush = mesh(new THREE.IcosahedronGeometry(0.65, 1), materials.leafLight);
@@ -140,14 +237,14 @@ function roundedRect(context, x, y, width, height, radius) {
 
 function createSpeech(comment) {
   const canvas = document.createElement('canvas');
-  canvas.width = 384;
-  canvas.height = 188;
+  canvas.width = 512;
+  canvas.height = 240;
   const context = canvas.getContext('2d');
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
   const sprite = new THREE.Sprite(material);
-  sprite.scale.set(2.55, 1.25, 1);
+  sprite.scale.set(3.8, 1.8, 1);
   sprite.position.set(0, 3.02, 0);
   sprite.renderOrder = 20;
   sprite.userData.canvas = canvas;
@@ -166,25 +263,25 @@ function updateSpeech(sprite, comment) {
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = '#fffdf0';
   context.strokeStyle = '#d2d6b8';
-  context.lineWidth = 5;
-  roundedRect(context, 8, 8, canvas.width - 16, canvas.height - 34, 20);
+  context.lineWidth = 6;
+  roundedRect(context, 8, 8, canvas.width - 16, canvas.height - 42, 24);
   context.fill();
   context.stroke();
   context.fillStyle = '#fffdf0';
   context.beginPath();
-  context.moveTo(52, canvas.height - 28);
-  context.lineTo(78, canvas.height - 4);
-  context.lineTo(104, canvas.height - 28);
+  context.moveTo(65, canvas.height - 36);
+  context.lineTo(98, canvas.height - 4);
+  context.lineTo(131, canvas.height - 36);
   context.closePath();
   context.fill();
   context.strokeStyle = '#d2d6b8';
   context.stroke();
   context.fillStyle = '#7b9468';
-  context.font = '700 19px DM Sans, sans-serif';
-  context.fillText(String(comment.name || 'Warga').slice(0, 22), 30, 38);
+  context.font = '700 34px DM Sans, sans-serif';
+  context.fillText(String(comment.name || 'Warga').slice(0, 22), 36, 49);
   context.fillStyle = '#4e654d';
-  context.font = '500 18px DM Sans, sans-serif';
-  wrapSpeech(comment.text).forEach((line, index) => context.fillText(line, 30, 72 + index * 27));
+  context.font = '500 31px DM Sans, sans-serif';
+  wrapSpeech(comment.text).forEach((line, index) => context.fillText(line, 36, 98 + index * 40));
   sprite.userData.textKey = textKey;
   sprite.userData.texture.needsUpdate = true;
 }
@@ -226,8 +323,7 @@ function createVillager(comment, index) {
 }
 
 function queuePosition(index) {
-  const spread = 1.1;
-  return new THREE.Vector3(((index % 2) ? 0.62 : -0.62), 0, 4.35 + Math.floor(index / 2) * spread);
+  return new THREE.Vector3(0, 0, 2.55 + index * 1.15);
 }
 
 function updateVillager(group, comment, index, now) {
@@ -260,6 +356,13 @@ function render(now = performance.now()) {
   if (!renderer) return;
   const delta = Math.min(100, now - lastTime);
   lastTime = now;
+  if (pakKades) {
+    const phase = now * 0.0022;
+    pakKades.position.y = pakKades.userData.baseY + Math.sin(phase) * 0.025;
+    const [leftArm, rightArm] = pakKades.userData.arms;
+    leftArm.rotation.z = -0.2 + Math.sin(phase + Math.PI) * 0.035;
+    rightArm.rotation.z = 0.2 + Math.sin(phase) * 0.035;
+  }
   for (const record of villagers.values()) {
     if (record.departing) {
       const duration = reducedMotion ? REDUCED_DURATION : WALK_DURATION;
@@ -362,6 +465,12 @@ function setVillagers(comments = []) {
   });
 }
 
+function setTotalFollowers(value) {
+  const numeric = Number(value);
+  totalFollowers = Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
+  updateTotalBoard(totalFollowers);
+}
+
 function depart(id, replyText) {
   const record = villagers.get(id);
   if (!record || record.departing) return false;
@@ -385,8 +494,11 @@ function dispose() {
   renderer.dispose();
   renderer.domElement.remove();
   renderer = null; scene = null; camera = null; root = null; villagersRoot = null;
+  pakKades = null;
+  totalBoard = null;
+  totalFollowers = null;
   villagers.clear();
 }
 
-export const scene3d = { init, setVillagers, depart, resize, dispose };
-export { init, setVillagers, depart, resize, dispose };
+export const scene3d = { init, setVillagers, setTotalFollowers, depart, resize, dispose };
+export { init, setVillagers, setTotalFollowers, depart, resize, dispose };
