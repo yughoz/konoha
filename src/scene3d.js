@@ -150,7 +150,6 @@ function buildBaleBoard() {
   group.add(roof);
   const plaque = createTotalBoard();
   plaque.position.set(0, 2.1, 0.13);
-  plaque.material.rotation = -0.035;
   group.add(plaque);
   group.userData.plaque = plaque;
   return group;
