@@ -124,12 +124,32 @@ function buildReception() {
   group.add(person);
   pakKades = person;
 
-  const board = createTotalBoard();
-  board.position.set(3.8, 2.35, -0.02);
-  board.scale.setScalar(2.5);
+  const board = buildBaleBoard();
+  board.position.set(3.8, 0, -0.02);
   group.add(board);
-  totalBoard = board;
+  totalBoard = board.userData.plaque;
   updateTotalBoard(totalFollowers);
+  return group;
+}
+
+function buildBaleBoard() {
+  const group = new THREE.Group();
+  const postMaterial = materials.wood;
+  const roofMaterial = materials.roof;
+  addBox(group, [0.2, 2.5, 0.2], [-1.55, 1.25, 0], postMaterial);
+  addBox(group, [0.2, 2.5, 0.2], [1.55, 1.25, 0], postMaterial);
+  addBox(group, [0.42, 0.18, 0.46], [-1.55, 0.12, 0], roofMaterial);
+  addBox(group, [0.42, 0.18, 0.46], [1.55, 0.12, 0], roofMaterial);
+  addBox(group, [3.55, 1.78, 0.16], [0, 2.1, 0], postMaterial);
+  addBox(group, [3.82, 0.16, 0.46], [0, 3.03, 0], roofMaterial);
+  const roof = mesh(new THREE.ConeGeometry(2.05, 0.62, 4), roofMaterial);
+  roof.rotation.y = Math.PI / 4;
+  roof.position.y = 3.36;
+  group.add(roof);
+  const plaque = createTotalBoard();
+  plaque.position.set(0, 2.1, 0.13);
+  group.add(plaque);
+  group.userData.plaque = plaque;
   return group;
 }
 
@@ -142,7 +162,7 @@ function createTotalBoard() {
   texture.colorSpace = THREE.SRGBColorSpace;
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
   const sprite = new THREE.Sprite(material);
-  sprite.scale.set(3.35, 1.55, 1);
+  sprite.scale.set(2.9, 1.35, 1);
   sprite.renderOrder = 18;
   sprite.userData.canvas = canvas;
   sprite.userData.context = context;
