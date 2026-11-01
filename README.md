@@ -4,7 +4,7 @@ Desa interaktif dari komentar Instagram: warga mengantre di depan rumah Pak Kade
 
 ## Dunia 3D
 
-Scene desa sekarang memakai Three.js dengan kamera isometric dan mesh low-poly procedural untuk rumah Pak Kades, jalan, tanah, pohon, semak, dan warga. Komentar tampil sebagai bubble 3D di atas kepala warga. Antrean mengikuti urutan PocketBase; setelah balasan berhasil, warga berjalan pulang selama 5,4 detik. Panel admin tetap HTML agar login, keyboard, dan balasan tetap mudah digunakan. Browser tanpa WebGL memakai scene 2D sebagai fallback.
+Scene desa memakai Three.js dengan kamera isometric dan mesh low-poly procedural untuk rumah Pak Kades, jalan, tanah, pohon, semak, dan warga. Komentar tampil sebagai bubble 3D di atas kepala warga. Antrean mengikuti urutan PocketBase; setelah balasan berhasil, warga berjalan pulang selama 5,4 detik. Panel admin tetap HTML agar login, keyboard, dan balasan tetap mudah digunakan. Browser harus mendukung WebGL; browser yang tidak mendukungnya menampilkan pesan sederhana.
 
 ## Jalankan lokal
 
@@ -39,9 +39,9 @@ Saat development, Vite meneruskan `/api` ke PocketBase lokal. `npm run build` me
 
 ## Asset custom
 
-Delapan ilustrasi custom sudah dibuat lewat **Bumi Digital**, model `google/nano-banana-2.1`: background, rumah pak kades, pohon, semak, dan empat warga. Total biaya yang dilaporkan API: **3,6 kredit**. Asset final ada di `public/assets/`, beserta manifest sumber, ID generasi, prompt, dan validasi. Preview seluruh asset ada di `output/imagegen/contact-sheet.png`; brief dan petunjuk regenerasi ada di [assets-prompts.md](assets-prompts.md).
+Empat potret warga custom dibuat lewat **Bumi Digital**, model `google/nano-banana-2.1`, dan dipakai di antrean panel admin. Dunia 3D memakai mesh Three.js procedural. Total biaya generasi awal yang dilaporkan API: **3,6 kredit**. Potret aktif ada di `public/assets/`, beserta manifest sumber, ID generasi, prompt, dan validasi. Preview serta provenance generasi awal tetap ada di `output/imagegen/contact-sheet.png`; brief dan petunjuk regenerasi ada di [assets-prompts.md](assets-prompts.md).
 
-`tools/generate-images.py` memeriksa katalog akun sebelum membuat job, menyimpan hasil asli dan metadata, serta menyediakan `--resume ID` untuk melanjutkan tanpa POST baru. Kredensial dibaca ke environment proses sesuai skill `create-image-bd` dan tidak disimpan dalam project. Normalisasi menghasilkan PNG transparan dengan baseline kaki konsisten. Keempat warga memakai rig cutout CSS: kaki kiri dan kanan dari PNG asli dipisah dan digerakkan bergantian saat datang, maju antrean, serta pergi. Saat diam, PNG utuh ditampilkan tanpa efek goyang. Percobaan atlas sprite-gen sebelumnya tetap disimpan di `output/spritegen/` sebagai eksperimen yang gagal QA dan tidak dipakai runtime.
+`tools/generate-images.py` memeriksa katalog akun sebelum membuat job, menyimpan hasil asli dan metadata, serta menyediakan `--resume ID` untuk melanjutkan tanpa POST baru. Kredensial dibaca ke environment proses sesuai skill `create-image-bd` dan tidak disimpan dalam project. Normalisasi menghasilkan PNG transparan dengan baseline kaki konsisten untuk potret panel admin. Percobaan atlas sprite-gen sebelumnya tetap disimpan di `output/spritegen/` sebagai eksperimen yang gagal QA dan tidak dipakai runtime.
 
 ## Pemeriksaan
 

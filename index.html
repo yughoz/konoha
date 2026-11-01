@@ -66,33 +66,10 @@
             <span id="sim-status" class="status-chip">Menghubungkan…</span>
           </div>
 
-          <div id="village-scene" class="village-scene" aria-label="Ilustrasi desa dan warga yang mengantre">
+          <div id="village-scene" class="village-scene" aria-label="Desa 3D dan antrean warga">
             <div id="world" class="world">
               <canvas id="world-canvas" class="world-canvas" aria-label="Desa 3D dan antrean warga"></canvas>
-              <div id="world-fallback" class="world-fallback" aria-hidden="true">WebGL tidak tersedia; tampilan cadangan sedang digunakan.</div>
-              <img class="world-background" src="/assets/background.png" alt="" onload="this.parentElement.classList.add('has-background')" onerror="this.hidden=true" />
-              <div class="ground-texture" aria-hidden="true"></div>
-              <div class="grass-patch patch-one" aria-hidden="true"></div><div class="grass-patch patch-two" aria-hidden="true"></div><div class="grass-patch patch-three" aria-hidden="true"></div>
-              <div class="road-main" aria-hidden="true"></div><div class="road-branch" aria-hidden="true"></div>
-              <span class="path-stone stone-one" aria-hidden="true"></span><span class="path-stone stone-two" aria-hidden="true"></span><span class="path-stone stone-three" aria-hidden="true"></span><span class="path-stone stone-four" aria-hidden="true"></span><span class="path-stone stone-five" aria-hidden="true"></span>
-              <div class="garden-mark garden-one" aria-hidden="true"><i></i><i></i><i></i></div><div class="garden-mark garden-two" aria-hidden="true"><i></i><i></i><i></i></div><div class="garden-mark garden-three" aria-hidden="true"><i></i><i></i><i></i></div>
-              <img class="world-tree tree-one" src="/assets/tree.png" alt="" onerror="this.hidden=true" />
-              <img class="world-tree tree-two" src="/assets/tree.png" alt="" onerror="this.hidden=true" />
-              <img class="world-tree tree-three" src="/assets/tree.png" alt="" onerror="this.hidden=true" />
-              <img class="world-tree tree-four" src="/assets/tree.png" alt="" onerror="this.hidden=true" />
-              <img class="world-bush bush-one" src="/assets/bush.png" alt="" onerror="this.hidden=true" />
-              <img class="world-bush bush-two" src="/assets/bush.png" alt="" onerror="this.hidden=true" />
-              <div class="reception-fallback" aria-hidden="true"><strong>BALAI DESA</strong><span>PAK KADES</span></div>
-              <div id="followers-board" class="followers-board" aria-live="polite"><strong>TOTAL WARGA</strong><span id="followers-total">—</span><small>followers</small></div>
-              <div id="head-bubble" class="head-bubble" hidden></div>
-              <div class="future-site" aria-hidden="true"><span>+</span><p>Ruang untuk<br />cerita berikutnya</p></div>
-              <div id="characters" class="characters"></div>
-              <div id="scene-empty" class="scene-empty"><span class="empty-spark">✧</span><p>Masih sepi, nih.</p><span>Setiap komentar jadi awal cerita.</span><button id="scene-start" class="button scene-start" type="button"><svg class="icon"><use href="#i-chat" /></svg>Buka Instagram</button></div>
-              <span class="world-flower flower-one" aria-hidden="true">✿</span><span class="world-flower flower-two" aria-hidden="true">✿</span><span class="world-flower flower-three" aria-hidden="true">✿</span>
-              <div class="world-coordinate" aria-hidden="true"><span>DESA KOMEN</span><span>06° 12′ S · 106° 48′ E</span></div>
             </div>
-            <div id="arrival-note" class="arrival-note" hidden></div>
-            <span id="more-count" class="more-count" hidden></span>
           </div>
 
           <div class="scene-footer"><span><span class="legend-dot"></span> Satu warga, satu cerita.</span><span class="scene-footer-hint">Klik warga untuk membaca komentar <span aria-hidden="true">↗</span></span><button id="mobile-panel-open" class="text-button mobile-panel-open" type="button" aria-controls="conversation-panel" aria-expanded="false">Lihat antrean <svg class="icon"><use href="#i-chat" /></svg></button></div>

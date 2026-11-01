@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node test/queue.test.js && node test/walk.test.js && node test/scene3d.test.js && python3 test/generation.test.py && node tools/backend.mjs --check",
+    "test": "node test/queue.test.js && node test/scene3d.test.js && python3 test/generation.test.py && node tools/backend.mjs --check",
     "backend": "node tools/backend.mjs",
     "test:backend": "node tools/backend.mjs --install-only && python3 test/backend.test.py"
   },

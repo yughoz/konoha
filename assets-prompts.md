@@ -1,6 +1,6 @@
 # Desa Komen — asset generation brief
 
-Status: **generated and verified, 30 October 2026**. All eight assets were generated with Bumi Digital, model `google/nano-banana-2.1`, using the [create_image_bd skill](/Users/yughoz/.codex/skills/create-image-bd/SKILL.md). The API reported **3.6 credits** total: 2K house/background at 0.6 each, six 1K cutouts at 0.4 each. Final assets and provenance are in `public/assets/`; raw outputs and metadata are preserved in `output/imagegen/`. The house pilot was checked before the rest of the family was submitted.
+Status: **generated and verified, 30 October 2026**. This is the historical brief for eight Bumi Digital jobs using model `google/nano-banana-2.1` and the [create_image_bd skill](/Users/yughoz/.codex/skills/create-image-bd/SKILL.md). The API reported **3.6 credits** total. The live game keeps only the four villager portraits in `public/assets/`; the procedural Three.js world no longer loads the environmental illustrations. Raw outputs and metadata remain preserved in `output/imagegen/`.
 
 ## Art direction and exact prompts
 
@@ -8,12 +8,12 @@ Cozy Indonesian village in rounded hand-painted 2D editorial storybook style. Wa
 
 Each file below contains the complete exact production prompt. The shared style is repeated explicitly; no prompt claims an image reference is attached. Generate the house as the representative pilot, inspect its silhouette at 300 px width on mint ground, then keep its visual direction consistent for the remaining family.
 
-| Runtime asset | Exact prompt source | Source frame | Display role |
+| Generated asset | Exact prompt source | Source frame | Display role / provenance |
 | --- | --- | --- | --- |
-| `house.png` | [prompts/house.txt](prompts/house.txt) | 1:1 | One chief house, 300 px wide, bottom-center anchor |
-| `background.png` | [prompts/background.txt](prompts/background.txt) | 3:2, 2K | Empty landscape, queue path, boundary fence/lamp |
-| `tree.png` | [prompts/tree.txt](prompts/tree.txt) | 1:1 | Decorative shade tree, 150 px wide |
-| `bush.png` | [prompts/bush.txt](prompts/bush.txt) | 1:1 | Decorative low shrub, 90 px wide |
+| `house.png` | [prompts/house.txt](prompts/house.txt) | 1:1 | Archived 2D illustration; no longer loaded at runtime |
+| `background.png` | [prompts/background.txt](prompts/background.txt) | 3:2, 2K | Archived 2D illustration; no longer loaded at runtime |
+| `tree.png` | [prompts/tree.txt](prompts/tree.txt) | 1:1 | Archived 2D illustration; no longer loaded at runtime |
+| `bush.png` | [prompts/bush.txt](prompts/bush.txt) | 1:1 | Archived 2D illustration; no longer loaded at runtime |
 | `villager-1.png` | [prompts/villager-1.txt](prompts/villager-1.txt) | 1:1 | Man in terracotta shirt |
 | `villager-2.png` | [prompts/villager-2.txt](prompts/villager-2.txt) | 1:1 | Woman in sage blouse and cream hijab |
 | `villager-3.png` | [prompts/villager-3.txt](prompts/villager-3.txt) | 1:1 | Man in ochre shirt and dark peci |

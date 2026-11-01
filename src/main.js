@@ -1,13 +1,10 @@
 import './style.css';
 import { emptyState, queue, history, departedComments, sourceUrl } from './queue.js';
 import { pb, snapshot, syncComments, sendReply, errorMessage } from './api.js';
-import { walkRig } from './walk.js';
 import { scene3d } from './scene3d.js';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-const villagers = new Map();
-const walking = new Map();
 const simulation = new URLSearchParams(location.search).get('simulasi') === '1';
 const simulationSamples = [
   ['Budi Santoso', 'Pak Kades, boleh bikin taman bunga di sini?'],
@@ -29,7 +26,6 @@ let replyBusy = false;
 let exiting = null;
 const departures = [];
 let exitTimer;
-let departureWalkTimer;
 let draftTarget = null;
 let toastTimer;
 let queuePage = 1;
@@ -44,17 +40,23 @@ let previousSceneWaiting = [];
 let sceneError = '';
 
 function initScene3d() {
+  const world = $('#world');
   try {
-    const result = scene3d.init($('#world'));
+    const result = scene3d.init(world);
     sceneReady = result !== false;
-    $('#world').classList.toggle('is-3d', sceneReady);
-    if (sceneReady) window.addEventListener('resize', () => scene3d.resize(), { passive: true });
   } catch (error) {
     sceneReady = false;
-    sceneError = 'WebGL tidak tersedia; tampilan cadangan digunakan.';
-    $('#world').classList.remove('is-3d');
     console.warn('3D scene unavailable', error);
   }
+  if (sceneReady) {
+    window.addEventListener('resize', () => scene3d.resize(), { passive: true });
+    return;
+  }
+  sceneError = 'Browser ini membutuhkan WebGL untuk menjalankan Desa Komen.';
+  const message = document.createElement('p');
+  message.className = 'webgl-required';
+  message.textContent = sceneError;
+  world.replaceChildren(message);
 }
 
 function setDrawer(open, restoreFocus = true) {
@@ -126,26 +128,6 @@ function variant(comment) {
   return 1 + [...comment.name].reduce((sum, letter) => sum + letter.codePointAt(0), 0) % 4;
 }
 
-function stopWalking(element) {
-  clearTimeout(walking.get(element));
-  walking.delete(element);
-  element?.classList.remove('is-walking');
-}
-
-function startWalking(element, duration) {
-  if (!element || reducedMotion.matches) return;
-  clearTimeout(walking.get(element));
-  element.classList.add('is-walking');
-  walking.set(element, setTimeout(() => stopWalking(element), duration));
-}
-
-reducedMotion.addEventListener('change', () => {
-  if (!reducedMotion.matches) return;
-  clearTimeout(departureWalkTimer);
-  for (const element of walking.keys()) stopWalking(element);
-  for (const element of villagers.values()) for (const animation of element.getAnimations()) animation.cancel();
-});
-
 function portrait(comment, className) {
   const wrapper = node('span', className);
   wrapper.dataset.variant = variant(comment);
@@ -158,7 +140,6 @@ function portrait(comment, className) {
     if (!wrapper.querySelector('.portrait-initial')) wrapper.append(node('span', 'portrait-initial', comment.name[0]));
   }, { once: true });
   wrapper.append(image);
-  if (className === 'villager-sprite') wrapper.insertAdjacentHTML('beforeend', walkRig(Number(wrapper.dataset.variant)));
   return wrapper;
 }
 
@@ -215,66 +196,9 @@ function renderList(waiting, answered) {
 
 function renderScene(waiting) {
   const capacity = mobileLayout.matches ? 4 : 8;
-  const visible = [...(exiting ? [exiting] : []), ...departures, ...waiting].slice(0, capacity);
-  if (sceneReady) {
-    // The active departure owns its mesh until the 5.4s animation ends; excluding it here prevents a late refresh from recreating a removed mesh.
-    scene3d.setVillagers([...departures, ...waiting].slice(0, capacity));
-    previousSceneWaiting = waiting.slice(0, capacity);
-    $('#scene-empty').hidden = waiting.length > 0 || Boolean(exiting) || departures.length > 0;
-    const remaining = Math.max(0, state.pendingTotal + departures.length + (exiting ? 1 : 0) - capacity);
-    $('#more-count').hidden = remaining === 0;
-    $('#more-count').textContent = `+${remaining} warga lainnya`;
-    return;
-  }
-  // CSS scene remains the fallback when WebGL cannot initialize.
-  const ids = new Set(visible.map(comment => comment.id));
-  for (const [id, element] of villagers) {
-    if (!ids.has(id) && id !== exiting?.id) {
-      stopWalking(element);
-      element.remove();
-      villagers.delete(id);
-    }
-  }
-  visible.forEach((comment, index) => {
-    let element = villagers.get(comment.id);
-    const left = 43 + index * (mobileLayout.matches ? 13 : 6.1);
-    const top = mobileLayout.matches ? [43, 55, 70, 87][index] : [43, 48, 54, 60, 67, 75, 83, 91][index];
-    if (!element) {
-      element = node('div', 'villager');
-      element.dataset.commentId = comment.id;
-      const select = node('button', 'villager-select');
-      select.type = 'button';
-      select.setAttribute('aria-label', `${comment.name}: ${comment.text}`);
-      const bubble = node('span', 'comment-bubble');
-      bubble.append(node('span', 'bubble-name', comment.name.split(' ')[0]), node('span', 'bubble-text', comment.text));
-      select.append(bubble, portrait(comment, 'villager-sprite'), node('span', 'villager-name', comment.name.split(' ')[0]));
-      select.addEventListener('click', () => openComment(comment));
-      element.append(select);
-      $('#characters').append(element);
-      villagers.set(comment.id, element);
-      if (!reducedMotion.matches) {
-        const rect = $('#world').getBoundingClientRect();
-        element.animate([
-          { translate: `${(101 - left) * rect.width / 100}px ${(101 - top) * rect.height / 100}px`, opacity: 0 },
-          { opacity: 1, offset: 0.2 },
-          { translate: '0px 0px', opacity: 1 },
-        ], { duration: 1700, easing: 'ease-out' });
-        startWalking(element, 1700);
-      }
-    } else if (comment.id !== exiting?.id && element.dataset.position !== `${left},${top}`) startWalking(element, 800);
-    element.dataset.position = `${left},${top}`;
-    element.style.left = `${left}%`;
-    element.style.top = `${top}%`;
-    element.style.zIndex = index === 0 ? 30 : 20 - index;
-    element.classList.toggle('is-head', index === 0);
-    element.classList.toggle('is-staggered', index % 2 === 1);
-    element.style.setProperty('--walk-delay', `${index * -0.17}s`);
-  });
+  // The active departure owns its mesh until the walk ends; excluding it here prevents a refresh from recreating it.
+  scene3d.setVillagers([...departures, ...waiting].slice(0, capacity));
   previousSceneWaiting = waiting.slice(0, capacity);
-  $('#scene-empty').hidden = waiting.length > 0 || Boolean(exiting);
-  const remaining = Math.max(0, state.pendingTotal + departures.length + (exiting ? 1 : 0) - capacity);
-  $('#more-count').hidden = remaining === 0;
-  $('#more-count').textContent = `+${remaining} warga lainnya`;
 }
 function render() {
   const waiting = queue(state);
@@ -305,9 +229,6 @@ function render() {
   // board gracefully shows an em dash until the first successful refresh.
   const followerValue = connection?.followersCount;
   scene3d.setTotalFollowers(followerValue);
-  const followerCount = Number(followerValue);
-  $('#followers-total').textContent = Number.isFinite(followerCount) && followerCount >= 0
-    ? new Intl.NumberFormat('id-ID').format(followerCount) : '—';
   $('#sync-button').disabled = !admin || !connected || syncBusy || Boolean(connection?.syncing) || !connection?.configured;
   $('#sync-label').textContent = syncBusy || connection?.syncing ? 'Menyinkronkan…' : 'Sinkronkan sekarang';
   const instagramReady = connected && connection?.configured && connection?.lastSync && !connection?.error;
@@ -331,7 +252,6 @@ function render() {
     $('#sync-title').textContent = 'Coba desa 3D tanpa koneksi.';
     $('#sync-hint').textContent = 'Warga datang tiap 3 detik saat simulasi berjalan. Balasan hanya lokal, tidak dikirim ke Instagram.';
     $('#reply-submit').firstChild.textContent = 'Balas simulasi ';
-    $('#scene-start').lastChild.textContent = 'Tambah warga pertama';
     $('#logout').firstChild.textContent = 'Keluar simulasi ';
     $('#storage-note').hidden = false;
     $('#storage-note').textContent = 'MODE SIMULASI — semua komentar dan balasan hanya di memori browser ini; tidak ada koneksi PocketBase atau Repliz.';
@@ -348,46 +268,17 @@ function render() {
 
 function animateReply(comment) {
   clearTimeout(exitTimer);
-  clearTimeout(departureWalkTimer);
   exiting = comment;
-  $('#head-bubble').textContent = comment.reply || 'Sudah selesai di sumber';
-  $('#head-bubble').hidden = false;
   const duration = reducedMotion.matches ? 350 : 5400;
-  if (sceneReady) {
-    scene3d.depart(comment.id, comment.reply || 'Sudah selesai di sumber');
-  } else {
-    const element = villagers.get(comment.id);
-    stopWalking(element);
-    element?.classList.add('is-leaving');
-    if (element && !reducedMotion.matches) {
-      const rect = $('#world').getBoundingClientRect();
-      element.animate([
-        { translate: '0px 0px', opacity: 1, offset: 0 },
-        { translate: '0px 0px', opacity: 1, offset: 1100 / duration },
-        { translate: `${rect.width * 0.16}px ${rect.height * 0.08}px`, opacity: 1, offset: 0.42 },
-        { translate: `${rect.width * 0.38}px ${rect.height * 0.25}px`, opacity: 1, offset: 0.69 },
-        { translate: `${rect.width * 0.59}px ${rect.height * 0.45}px`, opacity: 1, offset: 0.94 },
-        { translate: `${rect.width * 0.64}px ${rect.height * 0.5}px`, opacity: 0, offset: 1 },
-      ], { duration, easing: 'linear', fill: 'forwards' });
-      departureWalkTimer = setTimeout(() => startWalking(element, duration - 1100), 1100);
-    }
-  }
+  if (sceneReady) scene3d.depart(comment.id, comment.reply || 'Sudah selesai di sumber');
   exitTimer = setTimeout(() => {
-    clearTimeout(departureWalkTimer);
-    if (!sceneReady) {
-      const element = villagers.get(comment.id);
-      stopWalking(element);
-      element?.remove();
-      villagers.delete(comment.id);
-    }
     exiting = null;
-    $('#head-bubble').hidden = true;
     if (departures.length) animateReply(departures.shift());
     render();
   }, duration);
 }
 function applyState(next) {
-  const visibleBefore = sceneReady ? previousSceneWaiting : queue(state).filter(comment => villagers.has(comment.id));
+  const visibleBefore = previousSceneWaiting;
   departures.push(...departedComments(visibleBefore, next.waiting, next.completed, [...departures, ...(exiting ? [exiting] : [])]));
   state = next;
   if (!exiting && departures.length) animateReply(departures.shift());
@@ -430,13 +321,11 @@ function stopSimulation() {
 function resetSimulation() {
   stopSimulation();
   clearTimeout(exitTimer);
-  clearTimeout(departureWalkTimer);
   departures.length = 0;
   exiting = null;
   simulationComments = [];
   simulationIndex = 0;
   queuePage = historyPage = 1;
-  $('#head-bubble').hidden = true;
   previousSceneWaiting = [];
   if (sceneReady) { scene3d.dispose(); sceneReady = false; initScene3d(); }
   renderSimulation();
@@ -549,7 +438,6 @@ $('#panel-tabs').addEventListener('keydown', event => {
 $('#mobile-panel-open').addEventListener('click', () => setDrawer(true));
 $('#panel-close').addEventListener('click', () => setDrawer(false));
 $('#drawer-backdrop').addEventListener('click', () => setDrawer(false));
-$('#scene-start').addEventListener('click', () => simulation ? addSimulationComment() : window.open('https://www.instagram.com/nekoding.xyz/', '_blank', 'noopener,noreferrer'));
 $('#sim-button').addEventListener('click', () => {
   if (!simulation) { const url = new URL(location.href); url.searchParams.set('simulasi', '1'); location.href = url.href; return; }
   if (simulationTimer) stopSimulation();
