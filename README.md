@@ -35,6 +35,22 @@ Repliz memerlukan paket **Standard+** untuk inbox dan balasan. Inbox awal akun i
 
 Balas warga terdepan melalui panel Pak Kades. Balasan dikirim ke komentar asli Instagram; warga baru pulang setelah Repliz mengonfirmasi sukses. Jika hasil pengiriman belum pasti akibat timeout, periksa komentar asli sebelum mencoba ulang agar tidak mengirim balasan ganda. Link **Lihat di Instagram** membuka Post/Reel sumber jika URL tersedia.
 
+## Deteksi permintaan fitur
+
+Setelah komentar baru berhasil disimpan dari sinkronisasi Repliz, backend dapat meminta model Jev untuk menilai apakah komentar itu meminta fitur game baru. Set `JEV_API_KEY` untuk mengaktifkannya; jika key Jev atau konfigurasi Kaneo tidak lengkap, triase dinonaktifkan dengan aman dan sinkronisasi tetap berjalan. Semua nilai ini hanya dibaca dari environment server (jangan gunakan `VITE_*`):
+
+```text
+JEV_API_KEY=...
+JEV_BASE_URL=https://ai.sumopod.com/v1
+JEV_MODEL=jev-1.13.0
+JEV_THRESHOLD=0.6
+KANEO_API_URL=https://kaneo.nekoding.xyz/api
+KANEO_API_KEY=...
+KANEO_PROJECT_ID=...
+```
+
+Skor Jev disimpan di `request_score` dan keputusan ambang di `is_request`. Jika skor mencapai `JEV_THRESHOLD`, backend membuat satu task berstatus `to-do` di proyek Kaneo, lalu menyimpan ID-nya di `kaneo_task_id`; komentar yang sudah memiliki ID tidak dibuatkan task lagi. Task berisi ringkasan berawalan `Request IG:`, teks lengkap, username, tautan Post/Reel (jika tersedia), skor, dan ID komentar. Panggilan Jev memiliki batas waktu 6 detik. Error atau timeout dianggap bukan permintaan fitur, dan kegagalan membuat task hanya dicatat di log untuk dicoba pada sinkronisasi berikutnya.
+
 Saat development, Vite meneruskan `/api` ke PocketBase lokal. `npm run build` menghasilkan `dist/` yang juga dilayani PocketBase di `http://127.0.0.1:8090`. Untuk deployment terpisah, arahkan `/api` ke backend pada domain yang sama, atau atur `VITE_POCKETBASE_URL` ke origin PocketBase sebelum build. `REPLIZ_API_URL` default `https://api.repliz.com`; override hanya menerima origin HTTPS atau HTTP localhost untuk pengujian stub.
 
 ## Asset custom

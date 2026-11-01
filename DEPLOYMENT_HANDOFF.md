@@ -7,6 +7,7 @@
   - `pb_hooks/desa.js`
   - `pb_hooks/main.pb.js`
   - `pb_migrations/1793376000_desa.js`
+  - `pb_migrations/1793600000_comment_requests.js`
 - Launcher lokal ada di `tools/backend.mjs` dan memasang PocketBase v0.40.6 dengan checksum resmi.
 - Local PocketBase dan Vite sudah dihentikan.
 - Tidak ada password atau Repliz key yang disimpan di repository.
@@ -29,14 +30,23 @@ REPLIZ_ACCESS_KEY=...
 REPLIZ_SECRET_KEY=...
 REPLIZ_ACCOUNT_ID=6a88116362caae1e04010787
 REPLIZ_API_URL=https://api.repliz.com
+JEV_API_KEY=...
+JEV_BASE_URL=https://ai.sumopod.com/v1
+JEV_MODEL=jev-1.13.0
+JEV_THRESHOLD=0.6
+KANEO_API_URL=https://kaneo.nekoding.xyz/api
+KANEO_API_KEY=...
+KANEO_PROJECT_ID=...
 ```
 
 Akun Repliz yang dipilih adalah **@nekoding.xyz**. Semua Post/Reel akun itu menjadi sumber komentar. Sinkronisasi memakai polling satu menit dan tombol admin **Sinkronkan sekarang**; webhook belum dipasang.
 
+Jev dan Kaneo bersifat opsional. Biarkan `JEV_API_KEY`, `KANEO_API_KEY`, atau `KANEO_PROJECT_ID` kosong untuk menonaktifkan triase permintaan fitur tanpa menghentikan antrean. Jika aktif, komentar baru diberi `request_score` dan `is_request`; permintaan di atas ambang dibuat satu kali sebagai task Kaneo dan ID-nya disimpan di `kaneo_task_id`. Jev timeout/error dianggap bukan permintaan, sedangkan kegagalan Kaneo dicatat agar sinkronisasi berikutnya dapat mencoba lagi.
+
 ## Setelah deploy
 
 1. Jalankan PocketBase dengan `pb_hooks`, `pb_migrations`, dan data directory server.
-2. Pastikan migrasi membuat koleksi `admins`, `comments`, dan `sync_state`.
+2. Pastikan migrasi membuat koleksi `admins`, `comments`, dan `sync_state`, termasuk field `request_score`, `is_request`, dan `kaneo_task_id` pada `comments`.
 3. Build frontend dengan `VITE_POCKETBASE_URL=https://konoha.openpos.web.id` jika frontend di-host pada origin berbeda. Jika same-origin, kosongkan variabel itu.
 4. Login sebagai admin, tekan **Sinkronkan sekarang**, lalu cek komentar baru dari akun Instagram lain.
 5. Balasan hanya boleh diuji setelah komentar spesifik terlihat; endpoint mengirim balasan asli ke Instagram.

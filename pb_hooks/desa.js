@@ -9,6 +9,20 @@ function config() {
   };
 }
 
+function featureConfig() {
+  const thresholdValue = $os.getenv("JEV_THRESHOLD");
+  const threshold = thresholdValue && thresholdValue.trim() ? Number(thresholdValue) : NaN;
+  return {
+    jevKey: $os.getenv("JEV_API_KEY") || "",
+    jevModel: $os.getenv("JEV_MODEL") || "jev-1.13.0",
+    jevThreshold: Number.isFinite(threshold) ? Math.max(0, Math.min(1, threshold)) : 0.6,
+    jevUrl: ($os.getenv("JEV_BASE_URL") || "https://ai.sumopod.com/v1").replace(/\/+$/, ""),
+    kaneoKey: $os.getenv("KANEO_API_KEY") || "",
+    kaneoProjectId: $os.getenv("KANEO_PROJECT_ID") || "",
+    kaneoUrl: ($os.getenv("KANEO_API_URL") || "https://kaneo.nekoding.xyz/api").replace(/\/+$/, ""),
+  };
+}
+
 function state(app) { return app.findRecordById("sync_state", STATE_ID); }
 
 function status(app) {
@@ -97,6 +111,8 @@ function normalize(doc, cfg) {
   const date = Date.parse(comment.createdAt || doc.createdAt);
   if (!Number.isFinite(date)) throw new Error("invalid source date");
   const content = doc.content || {};
+  const owner = comment.owner || {};
+  const username = typeof owner.username === "string" && owner.username.trim() ? owner.username.trim() : typeof owner.name === "string" && owner.name.trim() ? owner.name.trim() : "Warga";
   return {
     replizId: doc._id,
     accountId: cfg.accountId,
@@ -104,11 +120,130 @@ function normalize(doc, cfg) {
     externalCommentId: typeof comment.id === "string" ? comment.id : String(comment.id || ""),
     mediaId: typeof content.id === "string" ? content.id : String(content.id || ""),
     sourceUrl: /^https?:\/\//.test(content.url || "") ? content.url : "",
-    name: comment.owner && comment.owner.name || "Warga",
+    name: username,
     text: comment.text,
     sourceCreatedAt: new Date(date).toISOString(),
     sourceStatus: doc.status,
   };
+}
+
+function isSafeFeatureUrl(url) {
+  return /^https:\/\//.test(url) || /^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(?:\/|$)/.test(url);
+}
+
+function featureHttp(url, authorization, path, body, timeout) {
+  if (!isSafeFeatureUrl(url)) throw new Error("invalid feature API URL");
+  return $http.send({
+    url: url + path,
+    method: "POST",
+    timeout,
+    headers: { Authorization: "Bearer " + authorization, Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+function featureEnabled(cfg) {
+  return Boolean(cfg.jevKey && cfg.kaneoKey && cfg.kaneoProjectId);
+}
+
+function jevScore(cfg, record) {
+  const state = "Username: " + record.getString("name") + "\nKomentar: " + record.getString("text");
+  const response = featureHttp(cfg.jevUrl, cfg.jevKey, "/systemone", {
+    model: cfg.jevModel,
+    state,
+    questions: {
+      is_feature_request: {
+        type: "noul",
+        instructions: "Apakah komentar ini berisi permintaan fitur baru untuk game?",
+      },
+    },
+  }, 6);
+  const answer = response && response.json && response.json.answers && response.json.answers.is_feature_request;
+  const score = answer && Number(answer.noul);
+  if (!response || response.statusCode < 200 || response.statusCode >= 300 || !Number.isFinite(score)) {
+    throw new Error("Jev response failed");
+  }
+  return Math.max(0, Math.min(1, score));
+}
+
+function kaneoTaskId(value) {
+  if (!value || typeof value !== "object") return "";
+  const candidates = [value.id, value.task && value.task.id, value.data && value.data.id, value.taskId, value.task_id];
+  for (const candidate of candidates) if (typeof candidate === "string" && candidate) return candidate;
+  for (const candidate of candidates) if (typeof candidate === "number" && Number.isFinite(candidate)) return String(candidate);
+  return "";
+}
+
+function kaneoTask(cfg, record, score) {
+  const text = record.getString("text");
+  const title = "Request IG: " + text.replace(/\s+/g, " ").trim().slice(0, 68);
+  const description = [
+    "Username: " + record.getString("name"),
+    "Komentar: " + text,
+    "Link Instagram: " + (record.getString("sourceUrl") || "-"),
+    "Skor Jev: " + score,
+    "ID komentar: " + record.getString("externalCommentId") + " (PocketBase: " + record.id + ")",
+  ].join("\n");
+  const response = featureHttp(cfg.kaneoUrl, cfg.kaneoKey, "/task/" + encodeURIComponent(cfg.kaneoProjectId), {
+    title,
+    description,
+    priority: "no-priority",
+    status: "to-do",
+  }, 6);
+  if (!response || response.statusCode < 200 || response.statusCode >= 300) throw new Error("Kaneo task response failed");
+  const id = kaneoTaskId(response.json);
+  if (!id) throw new Error("Kaneo task id missing");
+  return id;
+}
+
+function saveFeatureFields(app, id, values) {
+  app.runInTransaction((tx) => {
+    const record = tx.findRecordById("comments", id);
+    for (const key in values) record.set(key, values[key]);
+    tx.save(record);
+  });
+}
+
+function processFeatureComment(app, id, evaluate) {
+  const cfg = featureConfig();
+  if (!featureEnabled(cfg)) return;
+  let record;
+  try { record = app.findRecordById("comments", id); } catch (error) { return; }
+  let score;
+  if (evaluate) {
+    try {
+      score = jevScore(cfg, record);
+      saveFeatureFields(app, id, { request_score: score, is_request: score >= cfg.jevThreshold });
+    } catch (error) {
+      // An unavailable classifier must never block the resident queue.
+      console.log("Jev feature detection belum berhasil; komentar dianggap bukan request.");
+      try { saveFeatureFields(app, id, { request_score: 0, is_request: false }); } catch (saveError) { /* record may have been removed */ }
+      return;
+    }
+  }
+  try { record = app.findRecordById("comments", id); } catch (error) { return; }
+  if (!record.getBool("is_request") || record.getString("kaneo_task_id")) return;
+  score = record.getFloat("request_score");
+  try {
+    const taskId = kaneoTask(cfg, record, score);
+    saveFeatureFields(app, id, { kaneo_task_id: taskId });
+  } catch (error) {
+    // Kaneo is retried by the next sync; importing comments remains successful.
+    console.log("Kaneo task belum berhasil dibuat; akan dicoba pada sinkronisasi berikutnya.");
+  }
+}
+
+function processFeatureRequests(app, newIds) {
+  const cfg = featureConfig();
+  if (!featureEnabled(cfg)) return;
+  const ids = newIds.slice();
+  // Include request records whose Kaneo call failed on an earlier sync.
+  try {
+    for (const record of app.findRecordsByFilter("comments", "", "", 0)) {
+      if (record.getBool("is_request") && !record.getString("kaneo_task_id") && !ids.includes(record.id)) ids.push(record.id);
+    }
+  } catch (error) { /* New records are still evaluated below. */ }
+  for (const id of ids) processFeatureComment(app, id, newIds.includes(id));
 }
 
 function sync(app) {
@@ -123,6 +258,7 @@ function sync(app) {
   });
   let imported = 0;
   let updated = 0;
+  const newCommentIds = [];
   try {
     const docs = {};
     let page = 1;
@@ -152,7 +288,8 @@ function sync(app) {
         const previous = record.getString("status");
         const previousSource = record.getString("sourceStatus");
         for (const key in value) if (key !== "sourceStatus") record.set(key, value[key]);
-        if (!found.length) {
+        const isNew = !found.length;
+        if (isNew) {
           record.set("queueOrder", ++order);
           record.set("status", value.sourceStatus === "resolved" ? "answered" : value.sourceStatus === "ignored" ? "ignored" : "pending");
           imported++;
@@ -168,14 +305,11 @@ function sync(app) {
           if (!record.getString("externalReplyId")) record.set("reply", "");
         } else if (["sending", "uncertain", "answered", "ignored"].includes(previous)) record.set("status", previous);
         tx.save(record);
+        if (isNew) newCommentIds.push(record.id);
       }
-      const record = state(tx);
-      record.set("syncing", false);
-      record.set("leaseUntil", 0);
-      record.set("lastSync", new Date().toISOString());
-      record.set("error", "");
-      tx.save(record);
     });
+    processFeatureRequests(app, newCommentIds);
+    saveSync(app, { syncing: false, leaseUntil: 0, lastSync: new Date().toISOString(), error: "" });
     return Object.assign({ imported, updated }, status(app));
   } catch (error) {
     saveSync(app, { syncing: false, leaseUntil: 0, error: "Sinkronisasi Repliz gagal. Antrean sebelumnya tetap tersimpan; coba sinkronkan lagi." });

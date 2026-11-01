@@ -68,6 +68,73 @@ class ReplizStub(BaseHTTPRequestHandler):
         return self.send_json(self.post_result["status"], self.post_result["body"])
 
 
+
+class JevStub(BaseHTTPRequestHandler):
+    mode = "low"
+    score = 0.2
+    requests = []
+
+    def log_message(self, *_args):
+        pass
+
+    def send_json(self, status, value):
+        payload = json.dumps(value).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        try:
+            self.wfile.write(payload)
+        except BrokenPipeError:
+            pass
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        raw = self.rfile.read(length)
+        try:
+            body = json.loads(raw or b"{}")
+        except ValueError:
+            body = {}
+        type(self).requests.append({"headers": dict(self.headers), "body": body})
+        if self.mode == "timeout":
+            time.sleep(7)
+            return self.send_json(200, {"answers": {"is_feature_request": {"noul": self.score}}})
+        if self.mode == "error":
+            return self.send_json(503, {"error": "stub failure"})
+        score = 0.91 if self.mode == "high" else self.score
+        return self.send_json(200, {"answers": {"is_feature_request": {"noul": score}}})
+
+
+class KaneoStub(BaseHTTPRequestHandler):
+    requests = []
+    status = 200
+
+    def log_message(self, *_args):
+        pass
+
+    def send_json(self, status, value):
+        payload = json.dumps(value).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        try:
+            self.wfile.write(payload)
+        except BrokenPipeError:
+            pass
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        raw = self.rfile.read(length)
+        try:
+            body = json.loads(raw or b"{}")
+        except ValueError:
+            body = {}
+        type(self).requests.append({"path": self.path, "headers": dict(self.headers), "body": body})
+        if self.status != 200:
+            return self.send_json(self.status, {"error": "stub failure"})
+        return self.send_json(200, {"id": f"task-{len(type(self).requests)}"})
+
 def make_doc(index, status="pending"):
     return {
         "_id": f"queue-{index:03d}",
@@ -86,11 +153,22 @@ class BackendTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.repliz = ThreadingHTTPServer(("127.0.0.1", free_port()), ReplizStub)
+        cls.jev = ThreadingHTTPServer(("127.0.0.1", free_port()), JevStub)
+        cls.kaneo = ThreadingHTTPServer(("127.0.0.1", free_port()), KaneoStub)
         cls.repliz_thread = threading.Thread(target=cls.repliz.serve_forever, daemon=True)
+        cls.jev_thread = threading.Thread(target=cls.jev.serve_forever, daemon=True)
+        cls.kaneo_thread = threading.Thread(target=cls.kaneo.serve_forever, daemon=True)
         cls.repliz_thread.start()
+        cls.jev_thread.start()
+        cls.kaneo_thread.start()
         ReplizStub.docs = [make_doc(i) for i in range(131)]
         ReplizStub.fail_page = None
         ReplizStub.post_result = {"status": 200, "body": {"commentId": "reply-stub"}}
+        JevStub.mode = "low"
+        JevStub.score = 0.2
+        JevStub.requests = []
+        KaneoStub.status = 200
+        KaneoStub.requests = []
         cls.data = tempfile.TemporaryDirectory(prefix="desa-pb-test-")
         cls.pb_port = free_port()
         env = dict(os.environ)
@@ -100,6 +178,13 @@ class BackendTest(unittest.TestCase):
             "REPLIZ_ACCOUNT_ID": ACCOUNT,
             "REPLIZ_AUTHORIZATION": "Basic dGVzdDp0ZXN0",
             "REPLIZ_API_URL": f"http://127.0.0.1:{cls.repliz.server_port}",
+            "JEV_API_KEY": "jev-test-key",
+            "JEV_BASE_URL": f"http://127.0.0.1:{cls.jev.server_port}",
+            "JEV_MODEL": "jev-test-model",
+            "JEV_THRESHOLD": "0.6",
+            "KANEO_API_URL": f"http://127.0.0.1:{cls.kaneo.server_port}",
+            "KANEO_API_KEY": "kaneo-test-key",
+            "KANEO_PROJECT_ID": "project-test",
         })
         cls.pb = subprocess.Popen([
             str(PB), "serve", f"--http=127.0.0.1:{cls.pb_port}", "--dir=" + cls.data.name,
@@ -137,6 +222,10 @@ class BackendTest(unittest.TestCase):
         cls.data.cleanup()
         cls.repliz.shutdown()
         cls.repliz.server_close()
+        cls.jev.shutdown()
+        cls.jev.server_close()
+        cls.kaneo.shutdown()
+        cls.kaneo.server_close()
 
     @classmethod
     def request(cls, method, path, body=None, auth=True):
@@ -208,6 +297,109 @@ class BackendTest(unittest.TestCase):
         self.assertEqual(after["totalItems"], before)
         self.assertTrue(self.request("GET", "/api/desa/status", auth=False).get("error"))
         ReplizStub.fail_page = None
+
+
+    def test_z_feature_request_detection_task_and_resilience(self):
+        # A new high-scoring comment creates one Kaneo task and stores its score/id.
+        high = make_doc(131)
+        high["comment"]["text"] = "Tolong tambahkan fitur hujan di desa"
+        ReplizStub.docs.append(high)
+        JevStub.mode = "high"
+        before_jev = len(JevStub.requests)
+        result = self.sync()
+        self.assertIsNone(result.get("_status"), result)
+        self.assertEqual(result["imported"], 1)
+        self.assertEqual(len(JevStub.requests), before_jev + 1)
+        self.assertEqual(len(KaneoStub.requests), 1)
+        jev_body = JevStub.requests[-1]["body"]
+        self.assertEqual(jev_body["model"], "jev-test-model")
+        self.assertEqual(JevStub.requests[-1]["headers"]["Authorization"], "Bearer jev-test-key")
+        self.assertIn(high["comment"]["text"], jev_body["state"])
+        self.assertIn(high["comment"]["owner"]["name"], jev_body["state"])
+        self.assertIn("is_feature_request", jev_body["questions"])
+        kaneo = KaneoStub.requests[-1]
+        self.assertEqual(kaneo["path"], "/task/project-test")
+        self.assertEqual(kaneo["headers"]["Authorization"], "Bearer kaneo-test-key")
+        self.assertIn(high["comment"]["text"], kaneo["body"]["description"])
+        self.assertIn(high["comment"]["owner"]["name"], kaneo["body"]["description"])
+        self.assertIn(high["content"]["url"], kaneo["body"]["description"])
+        self.assertIn("comment-131", kaneo["body"]["description"])
+        self.assertIn("0.91", kaneo["body"]["description"])
+        self.assertEqual(kaneo["body"]["status"], "to-do")
+        self.assertEqual(kaneo["body"]["priority"], "no-priority")
+        self.assertTrue(kaneo["body"]["title"].startswith("Request IG:"))
+        high_row = self.request(
+            "GET", "/api/collections/comments/records?filter=" + urllib.parse.quote('replizId="queue-131"'), auth=False
+        )["items"][0]
+        self.assertAlmostEqual(high_row["request_score"], 0.91, places=3)
+        self.assertTrue(high_row["is_request"])
+        self.assertEqual(high_row["kaneo_task_id"], "task-1")
+
+        # Duplicate sync does not call Jev again or create a second task.
+        self.sync()
+        self.assertEqual(len(JevStub.requests), before_jev + 1)
+        self.assertEqual(len(KaneoStub.requests), 1)
+
+        # Low score is stored but does not create a task.
+        low = make_doc(132)
+        low["comment"]["text"] = "Terima kasih, desanya bagus"
+        ReplizStub.docs.append(low)
+        JevStub.mode = "low"
+        result = self.sync()
+        self.assertIsNone(result.get("_status"), result)
+        low_row = self.request(
+            "GET", "/api/collections/comments/records?filter=" + urllib.parse.quote('replizId="queue-132"'), auth=False
+        )["items"][0]
+        self.assertAlmostEqual(low_row["request_score"], 0.2, places=3)
+        self.assertFalse(low_row["is_request"])
+        self.assertEqual(len(KaneoStub.requests), 1)
+
+        # Jev timeout/error are treated as non-requests and do not fail the queue sync.
+        timeout = make_doc(133)
+        timeout["comment"]["text"] = "Bisa tambah mode malam?"
+        ReplizStub.docs.append(timeout)
+        JevStub.mode = "timeout"
+        result = self.sync()
+        self.assertIsNone(result.get("_status"), result)
+        timeout_row = self.request(
+            "GET", "/api/collections/comments/records?filter=" + urllib.parse.quote('replizId="queue-133"'), auth=False
+        )["items"][0]
+        self.assertFalse(timeout_row["is_request"])
+        self.assertEqual(len(KaneoStub.requests), 1)
+
+        error = make_doc(134)
+        error["comment"]["text"] = "Buatkan fitur memancing"
+        ReplizStub.docs.append(error)
+        JevStub.mode = "error"
+        result = self.sync()
+        self.assertIsNone(result.get("_status"), result)
+        error_row = self.request(
+            "GET", "/api/collections/comments/records?filter=" + urllib.parse.quote('replizId="queue-134"'), auth=False
+        )["items"][0]
+        self.assertFalse(error_row["is_request"])
+        self.assertEqual(len(KaneoStub.requests), 1)
+
+        # Kaneo failure is isolated and retried on the next sync without re-running Jev.
+        retry = make_doc(135)
+        retry["comment"]["text"] = "Tambahkan sistem memancing"
+        ReplizStub.docs.append(retry)
+        JevStub.mode = "high"
+        KaneoStub.status = 503
+        result = self.sync()
+        self.assertIsNone(result.get("_status"), result)
+        self.assertEqual(len(JevStub.requests), before_jev + 5)
+        self.assertEqual(len(KaneoStub.requests), 2)
+        retry_row = self.request(
+            "GET", "/api/collections/comments/records?filter=" + urllib.parse.quote('replizId="queue-135"'), auth=False
+        )["items"][0]
+        self.assertTrue(retry_row["is_request"])
+        self.assertEqual(retry_row["kaneo_task_id"], "")
+        KaneoStub.status = 200
+        self.sync()
+        self.assertEqual(len(JevStub.requests), before_jev + 5)
+        self.assertEqual(len(KaneoStub.requests), 3)
+        retry_row = self.request("GET", "/api/collections/comments/records/" + retry_row["id"], auth=False)
+        self.assertEqual(retry_row["kaneo_task_id"], "task-3")
 
 
 if __name__ == "__main__":
