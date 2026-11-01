@@ -1,6 +1,6 @@
 import './style.css';
 import { emptyState, queue, sourceUrl, departedComments } from './queue.js';
-import { pb, snapshot, errorMessage } from './api.js';
+import { pb, snapshot, getBuilds, errorMessage } from './api.js';
 import { scene3d } from './scene3d.js';
 
 const $ = selector => document.querySelector(selector);
@@ -13,6 +13,7 @@ let refreshAgain = false;
 let queuePage = 1;
 let historyPage = 1;
 let previousSceneWaiting = [];
+let builds = [];
 const departures = [];
 let exiting = null;
 let exitTimer = null;
@@ -27,6 +28,14 @@ function openComment(comment) {
   $('#comment-dialog').showModal();
 }
 
+const buildStatusLabels = { 'to-do': 'Rencana', 'in-progress': 'Sedang dibangun', 'in-review': 'Hampir jadi', done: 'Selesai' };
+function openBuild(build) {
+  $('#build-title').textContent = build.title || 'Rencana warga';
+  const status = String(build.status || 'to-do').toLowerCase();
+  $('#build-status').textContent = buildStatusLabels[status] || status;
+  $('#build-dialog').showModal();
+}
+
 function render() {
   const waiting = queue(state);
   $('#waiting-count').textContent = state.pendingTotal;
@@ -38,6 +47,7 @@ function render() {
   $('#storage-note').hidden = !note;
   $('#storage-note').textContent = note;
   scene3d.setVillagers([...departures, ...waiting].slice(0, 30));
+  scene3d.setBuilds(builds);
 }
 
 function animateReply(comment) {
@@ -89,6 +99,7 @@ function initScene() {
   try {
     sceneReady = scene3d.init($('#world')) !== false;
     scene3d.setClickHandler(openComment);
+    scene3d.setBuildClickHandler(openBuild);
   } catch (error) {
     sceneReady = false;
     console.warn('3D scene unavailable', error);
@@ -103,6 +114,7 @@ function initScene() {
 $('#recenter-button').addEventListener('click', () => scene3d.recenter?.());
 $('#guide-open').addEventListener('click', () => $('#guide-dialog').showModal());
 for (const [id, button] of [['guide', 'close'], ['comment', 'close']]) $(`#${id}-${button}`).addEventListener('click', () => $(`#${id}-dialog`).close());
+$('#build-close').addEventListener('click', () => $('#build-dialog').close());
 for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('click', event => {
   if (event.target !== dialog) return;
   const rect = dialog.getBoundingClientRect();
@@ -120,3 +132,10 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
 // ponytail: periodic snapshot covers an SSE event lost while a tab sleeps.
 setInterval(() => { if (!document.hidden) refresh(); }, 15000);
 refresh();
+
+async function refreshBuilds() {
+  try { builds = await getBuilds(); render(); } catch { builds = []; render(); }
+}
+refreshBuilds();
+setInterval(() => { if (!document.hidden) refreshBuilds(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshBuilds(); });

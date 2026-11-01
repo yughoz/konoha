@@ -34,6 +34,7 @@ let resizeObserver;
 let lastTime = 0;
 let reducedMotion = false;
 const villagers = new Map();
+const buildPlots = new Map();
 const shared = new Set();
 const materialCache = new Map();
 let materials = {};
@@ -48,6 +49,7 @@ let pointers = new Map();
 let pointerStart = null;
 let pointerMoved = false;
 let pinchDistance = null;
+let buildClickHandler = null;
 
 const mat = color => {
   if (materialCache.has(color)) return materialCache.get(color);
@@ -256,6 +258,68 @@ function buildVillage() {
     group.add(bush);
   }
   return group;
+}
+
+const BUILD_POSITIONS = [[-7, -4], [7, -4], [-8, 5], [8, 5], [-3.8, 8], [4.5, 8], [-11, -8], [11, -8]];
+const BUILD_STATUS = { 'to-do': 'RENCANA', 'in-progress': 'DIBANGUN', 'in-review': 'HAMPIR JADI', done: 'SELESAI' };
+
+function createBuildPlaque(build) {
+  const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 180;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#76553b'; context.strokeStyle = '#4d3427'; context.lineWidth = 8;
+  roundedRect(context, 6, 6, 500, 168, 18); context.fill(); context.stroke();
+  context.fillStyle = '#f4e1b3'; context.font = '700 25px DM Sans, sans-serif'; context.fillText(BUILD_STATUS[build.status] || String(build.status || '').toUpperCase(), 24, 40);
+  context.fillStyle = '#fff9e2'; context.font = '600 28px DM Sans, sans-serif';
+  const title = String(build.title || 'Rencana warga').slice(0, 29); context.fillText(title, 24, 84);
+  context.fillStyle = '#e0c99b'; context.font = '500 19px DM Sans, sans-serif'; context.fillText(build.username ? `@${String(build.username).replace(/^@/, '')}` : 'DESA KOMEN', 24, 132);
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 0.98), new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, depthTest: false }));
+  plaque.position.set(0, 2.2, 0.05); plaque.renderOrder = 19; plaque.userData.texture = texture; return plaque;
+}
+
+function buildConstruction(build, index) {
+  const group = new THREE.Group();
+  const [x, z] = BUILD_POSITIONS[index % BUILD_POSITIONS.length]; group.position.set(x, 0, z); group.userData.build = build;
+  const base = addBox(group, [3.7, 0.16, 3.1], [0, 0.08, 0], materials.soil); base.userData.build = build;
+  const status = String(build.status || 'to-do').toLowerCase();
+  if (status === 'to-do') {
+    addBox(group, [0.16, 2.3, 0.16], [-1.25, 1.15, 0], materials.wood);
+    addBox(group, [0.16, 2.3, 0.16], [1.25, 1.15, 0], materials.wood);
+    addBox(group, [2.7, 0.16, 0.16], [0, 2.2, 0], materials.wood);
+  } else {
+    const height = status === 'in-progress' ? 1.45 : 2.05;
+    addBox(group, [2.65, height, 2.05], [0, height / 2, 0], materials.wall);
+    addBox(group, [0.55, 1.05, 0.08], [0, 0.56, 1.06], materials.wood);
+    for (const px of [-0.78, 0.78]) addBox(group, [0.45, 0.62, 0.08], [px, 1.05, 1.06], materials.window);
+    const roof = mesh(new THREE.ConeGeometry(1.95, 0.72, 4), materials.roof); roof.rotation.y = Math.PI / 4; roof.position.y = height + 0.38; group.add(roof);
+    if (status === 'in-progress') {
+      const scaffold = materials.wood;
+      for (const sx of [-1.65, 1.65]) { addBox(group, [0.11, 2.7, 0.11], [sx, 1.35, 1.2], scaffold); addBox(group, [0.11, 2.7, 0.11], [sx, 1.35, -1.2], scaffold); }
+      for (const sy of [0.55, 1.55, 2.45]) addBox(group, [3.45, 0.09, 0.09], [0, sy, 1.2], scaffold);
+    }
+  }
+  group.add(createBuildPlaque(build));
+  return group;
+}
+
+function setBuilds(items = []) {
+  if (!renderer || !root) return;
+  const visible = items.filter(build => String(build.status || '').toLowerCase() !== 'cancelled').slice(0, BUILD_POSITIONS.length);
+  const ids = new Set(visible.map(build => String(build.id ?? build.number ?? build.title)));
+  for (const [id, plot] of buildPlots) {
+    if (ids.has(id)) continue;
+    root.remove(plot); disposeObject(plot); buildPlots.delete(id);
+  }
+  visible.forEach((build, index) => {
+    const id = String(build.id ?? build.number ?? build.title);
+    const existing = buildPlots.get(id);
+    if (existing) {
+      const old = existing.userData.build || {};
+      if (old.status === build.status && old.title === build.title && old.username === build.username) return;
+      root.remove(existing); disposeObject(existing); buildPlots.delete(id);
+    }
+    const plot = buildConstruction(build, index); buildPlots.set(id, plot); root.add(plot);
+  });
 }
 
 function wrapSpeech(text, maxChars = 90) {
@@ -495,16 +559,17 @@ function bindControls(canvas) {
     up(event) {
       const wasClick = !pointerMoved && pointers.size === 1;
       pointers.delete(event.pointerId);
-      if (wasClick && clickHandler && camera && renderer) {
+      if (wasClick && (clickHandler || buildClickHandler) && camera && renderer) {
         const rect = canvas.getBoundingClientRect();
         const ndc = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
         const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(ndc, camera);
-        const hits = raycaster.intersectObjects([...villagers.values()].map(record => record.group), true);
+        const hits = raycaster.intersectObjects([...villagers.values()].map(record => record.group).concat([...buildPlots.values()]), true);
         const hit = hits.find(item => item.object.visible);
         if (hit) {
           let object = hit.object;
-          while (object && !object.userData?.comment) object = object.parent;
-          if (object?.userData?.comment) clickHandler(object.userData.comment);
+          while (object && !object.userData?.comment && !object.userData?.build) object = object.parent;
+          if (object?.userData?.comment) clickHandler?.(object.userData.comment);
+          else if (object?.userData?.build) buildClickHandler?.(object.userData.build);
         }
       }
       if (!pointers.size) { pointerStart = null; pinchDistance = null; }
@@ -653,9 +718,11 @@ function dispose() {
   totalBoard = null;
   totalFollowers = null;
   villagers.clear();
+  buildPlots.clear();
 }
 
 function setClickHandler(handler) { clickHandler = typeof handler === 'function' ? handler : null; }
+function setBuildClickHandler(handler) { buildClickHandler = typeof handler === 'function' ? handler : null; }
 
-export const scene3d = { init, setVillagers, setTotalFollowers, depart, resize, dispose, recenter, setClickHandler };
-export { init, setVillagers, setTotalFollowers, depart, resize, dispose, recenter, setClickHandler };
+export const scene3d = { init, setVillagers, setTotalFollowers, setBuilds, depart, resize, dispose, recenter, setClickHandler, setBuildClickHandler };
+export { init, setVillagers, setTotalFollowers, setBuilds, depart, resize, dispose, recenter, setClickHandler, setBuildClickHandler };

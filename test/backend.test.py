@@ -107,6 +107,8 @@ class JevStub(BaseHTTPRequestHandler):
 
 class KaneoStub(BaseHTTPRequestHandler):
     requests = []
+    tasks = []
+    get_count = 0
     status = 200
 
     def log_message(self, *_args):
@@ -122,6 +124,12 @@ class KaneoStub(BaseHTTPRequestHandler):
             self.wfile.write(payload)
         except BrokenPipeError:
             pass
+
+    def do_GET(self):
+        type(self).get_count += 1
+        if self.path in ("/task/tasks/project-test", "/task/project-test"):
+            return self.send_json(200, {"data": {"columns": [{"slug": "in-progress", "tasks": type(self).tasks}]}, "pagination": {"totalPages": 1}})
+        return self.send_json(404, {"error": "not found"})
 
     def do_POST(self):
         length = int(self.headers.get("Content-Length", "0"))
@@ -169,6 +177,8 @@ class BackendTest(unittest.TestCase):
         JevStub.requests = []
         KaneoStub.status = 200
         KaneoStub.requests = []
+        KaneoStub.tasks = []
+        KaneoStub.get_count = 0
         cls.data = tempfile.TemporaryDirectory(prefix="desa-pb-test-")
         cls.pb_port = free_port()
         env = dict(os.environ)
@@ -248,6 +258,21 @@ class BackendTest(unittest.TestCase):
 
     def sync(self):
         return self.request("POST", "/api/desa/sync")
+
+    def test_builds_public_endpoint_and_cache(self):
+        KaneoStub.tasks = [
+            {"id": "task-build-1", "number": 7, "title": "Fitur hujan", "status": "in-progress", "description": "Username: @warga7\nKomentar: hujan"},
+            {"id": "task-build-2", "number": 8, "title": "Jembatan", "status": "done"},
+        ]
+        first = self.request("GET", "/api/desa/builds", auth=False)
+        self.assertEqual(first, {"builds": [
+            {"id": "task-build-1", "number": 7, "title": "Fitur hujan", "status": "in-progress", "username": "warga7"},
+            {"id": "task-build-2", "number": 8, "title": "Jembatan", "status": "done"},
+        ]})
+        self.assertEqual(KaneoStub.get_count, 1)
+        second = self.request("GET", "/api/desa/builds", auth=False)
+        self.assertEqual(second, first)
+        self.assertEqual(KaneoStub.get_count, 1)
 
     def test_imports_all_pages_and_public_read(self):
         result = self.sync()

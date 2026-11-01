@@ -4,6 +4,7 @@ onBootstrap((e) => {
 });
 
 routerAdd("GET", "/api/desa/status", (e) => e.json(200, require(`${__hooks}/desa.js`).status(e.app)));
+routerAdd("GET", "/api/desa/builds", (e) => e.json(200, require(`${__hooks}/desa.js`).builds(e.app)));
 
 routerAdd("POST", "/api/desa/sync", (e) => {
   return e.json(200, require(`${__hooks}/desa.js`).sync(e.app));

@@ -34,4 +34,5 @@ export async function snapshot(queuePage, historyPage, previous = []) {
 
 export const syncComments = () => pb.send('/api/desa/sync', { method: 'POST' });
 export const sendReply = (id, text) => pb.send(`/api/desa/comments/${encodeURIComponent(id)}/reply`, { method: 'POST', body: { text } });
+export const getBuilds = () => pb.send('/api/desa/builds', { method: 'GET' }).then(value => Array.isArray(value) ? value : value?.builds || []);
 export const errorMessage = error => error.status === 0 ? 'Server belum terhubung. Pastikan PocketBase berjalan.' : error.response?.message || 'Permintaan gagal. Coba lagi.';

@@ -23,6 +23,9 @@ function featureConfig() {
   };
 }
 
+const BUILDS_CACHE_MS = 180000;
+let buildsCache = { expiresAt: 0, items: [] };
+
 function state(app) { return app.findRecordById("sync_state", STATE_ID); }
 
 function status(app) {
@@ -142,6 +145,17 @@ function featureHttp(url, authorization, path, body, timeout) {
   });
 }
 
+function kaneoRequest(cfg, method, path, body) {
+  if (!isSafeFeatureUrl(cfg.kaneoUrl)) throw new Error("invalid Kaneo API URL");
+  return $http.send({
+    url: cfg.kaneoUrl + path,
+    method,
+    timeout: 8,
+    headers: { Authorization: "Bearer " + cfg.kaneoKey, Accept: "application/json", "Content-Type": "application/json" },
+    body: body === undefined ? "" : JSON.stringify(body),
+  });
+}
+
 function featureEnabled(cfg) {
   return Boolean(cfg.jevKey && cfg.kaneoKey && cfg.kaneoProjectId);
 }
@@ -244,6 +258,110 @@ function processFeatureRequests(app, newIds) {
     }
   } catch (error) { /* New records are still evaluated below. */ }
   for (const id of ids) processFeatureComment(app, id, newIds.includes(id));
+}
+
+function taskRows(value) {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+  for (const key of ["tasks", "items", "docs", "results"]) if (Array.isArray(value[key])) return value[key];
+  if (Array.isArray(value.columns)) {
+    const rows = [];
+    for (const column of value.columns) {
+      if (!column || !Array.isArray(column.tasks)) continue;
+      for (const task of column.tasks) {
+        if (task && typeof task === "object" && !task.status && column.slug) task.status = column.slug;
+        rows.push(task);
+      }
+    }
+    if (Array.isArray(value.archivedTasks)) for (const task of value.archivedTasks) rows.push(task);
+    if (Array.isArray(value.plannedTasks)) for (const task of value.plannedTasks) rows.push(task);
+    return rows;
+  }
+  if (value.data && typeof value.data === "object") return taskRows(value.data);
+  if (value.project && typeof value.project === "object") return taskRows(value.project);
+  return [];
+}
+
+function taskValue(task, keys) {
+  for (const key of keys) {
+    const value = task && task[key];
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return "";
+}
+
+function taskUsername(task, byTaskId) {
+  const direct = taskValue(task, ["username", "instagramUsername", "requesterUsername", "instagram_username"]);
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  for (const key of ["requester", "requestedBy", "createdBy", "assignee", "author"]) {
+    const value = task && task[key];
+    if (value && typeof value === "object") {
+      const nested = taskValue(value, ["username", "instagramUsername", "name"]);
+      if (typeof nested === "string" && nested.trim()) return nested.trim();
+    }
+  }
+  const description = taskValue(task, ["description", "content", "body"]);
+  if (typeof description === "string") {
+    const match = description.match(/(?:^|\n)\s*(?:Username|IG|Instagram)\s*:\s*@?([^\s\n]+)/i);
+    if (match && match[1]) return match[1].trim();
+  }
+  const taskId = taskValue(task, ["id", "taskId", "task_id", "_id"]);
+  return taskId && byTaskId[taskId] ? byTaskId[taskId] : "";
+}
+
+function builds(app) {
+  const cfg = featureConfig();
+  if (!$os.getenv("KANEO_API_URL") || !cfg.kaneoKey || !cfg.kaneoProjectId) return { builds: [] };
+  const now = Date.now();
+  if (buildsCache.expiresAt > now) return { builds: buildsCache.items };
+  try {
+    const path = "/task/tasks/" + encodeURIComponent(cfg.kaneoProjectId);
+    const rows = [];
+    let page = 1;
+    for (;;) {
+      let response = kaneoRequest(cfg, "GET", path + (page === 1 ? "" : "?page=" + page + "&limit=100"));
+      // Older Kaneo deployments exposed the create route as a GET board endpoint.
+      if (page === 1 && response && response.statusCode === 404) response = kaneoRequest(cfg, "GET", "/task/" + encodeURIComponent(cfg.kaneoProjectId));
+      if (!response || response.statusCode < 200 || response.statusCode >= 300) throw new Error("Kaneo task list failed");
+      const pageRows = taskRows(response.json);
+      for (const task of pageRows) rows.push(task);
+      const pagination = response.json && response.json.pagination;
+      const totalPages = pagination && Number(pagination.totalPages);
+      if (!Number.isSafeInteger(totalPages) || page >= totalPages) break;
+      page++;
+    }
+    const byTaskId = {};
+    try {
+      for (const record of app.findRecordsByFilter("comments", "", "", 0)) {
+        const taskId = record.getString("kaneo_task_id");
+        const username = record.getString("name");
+        if (taskId && username) byTaskId[taskId] = username;
+      }
+    } catch (error) { /* A missing comments collection should not break the public map. */ }
+    const items = [];
+    for (let index = 0; index < rows.length; index++) {
+      const task = rows[index];
+      if (!task || typeof task !== "object") continue;
+      const rawId = taskValue(task, ["id", "taskId", "task_id", "_id"]);
+      if (rawId === "") continue;
+      const number = taskValue(task, ["number", "taskNumber", "no", "key", "position"]);
+      const item = {
+        id: String(rawId),
+        number: number === "" ? index + 1 : number,
+        title: String(taskValue(task, ["title", "name", "subject"])),
+        status: String(taskValue(task, ["status", "state"]) || "to-do"),
+      };
+      const username = taskUsername(task, byTaskId);
+      if (username) item.username = username;
+      items.push(item);
+    }
+    buildsCache = { expiresAt: now + BUILDS_CACHE_MS, items };
+    return { builds: items };
+  } catch (error) {
+    // The construction area is optional; Kaneo outages must never break the village.
+    buildsCache = { expiresAt: now + BUILDS_CACHE_MS, items: [] };
+    return { builds: [] };
+  }
 }
 
 function sync(app) {
@@ -359,4 +477,4 @@ function reply(app, id, text) {
   return record;
 }
 
-module.exports = { bootstrap, status, sync, reply };
+module.exports = { bootstrap, status, sync, reply, builds };
