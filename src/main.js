@@ -17,6 +17,8 @@ let builds = [];
 const departures = [];
 let exiting = null;
 let exitTimer = null;
+let recordingTimer = null;
+let recordingStartedAt = 0;
 
 function openComment(comment) {
   $('#comment-name').textContent = comment.name || 'Warga desa';
@@ -111,6 +113,42 @@ function initScene() {
   }
 }
 
+function formatRecordingElapsed(milliseconds) {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+function updateRecordingButton() {
+  const button = $('#recording-button');
+  if (!button) return;
+  const recording = scene3d.isRecording?.() === true;
+  button.classList.toggle('is-recording', recording);
+  $('#recording-label').textContent = recording ? 'Stop' : 'Rekam';
+  const elapsed = $('#recording-elapsed');
+  elapsed.hidden = !recording;
+  if (recording) elapsed.textContent = formatRecordingElapsed(Date.now() - recordingStartedAt);
+}
+
+function initRecordingControls() {
+  const button = $('#recording-button');
+  if (!button || !sceneReady || scene3d.canRecord?.() !== true) return;
+  button.hidden = false;
+  button.addEventListener('click', () => {
+    if (scene3d.isRecording?.()) {
+      scene3d.stopRecording?.();
+      clearInterval(recordingTimer);
+      recordingTimer = null;
+      updateRecordingButton();
+      return;
+    }
+    if (!scene3d.startRecording?.()) return;
+    recordingStartedAt = Date.now();
+    clearInterval(recordingTimer);
+    recordingTimer = setInterval(updateRecordingButton, 1000);
+    updateRecordingButton();
+  });
+}
+
 $('#recenter-button').addEventListener('click', () => scene3d.recenter?.());
 $('#guide-open').addEventListener('click', () => $('#guide-dialog').showModal());
 for (const [id, button] of [['guide', 'close'], ['comment', 'close']]) $(`#${id}-${button}`).addEventListener('click', () => $(`#${id}-dialog`).close());
@@ -122,6 +160,7 @@ for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListene
 });
 
 initScene();
+initRecordingControls();
 render();
 pb.realtime.onDisconnect = () => { connected = false; render(); };
 pb.collection('comments').subscribe('*', () => refresh()).catch(() => {});

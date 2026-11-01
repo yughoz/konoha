@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { scene3d, init, setVillagers, depart, resize, dispose, recenter, setClickHandler } from '../src/scene3d.js';
+import { scene3d, init, setVillagers, depart, resize, dispose, recenter, setClickHandler, canRecord, startRecording, stopRecording, isRecording } from '../src/scene3d.js';
 
-for (const fn of [scene3d.init, scene3d.setVillagers, scene3d.setTotalFollowers, scene3d.depart, scene3d.resize, scene3d.dispose, scene3d.recenter, scene3d.setClickHandler, init, setVillagers, depart, resize, dispose, recenter, setClickHandler]) assert.equal(typeof fn, 'function');
+for (const fn of [scene3d.init, scene3d.setVillagers, scene3d.setTotalFollowers, scene3d.depart, scene3d.resize, scene3d.dispose, scene3d.recenter, scene3d.setClickHandler, scene3d.canRecord, scene3d.startRecording, scene3d.stopRecording, scene3d.isRecording, init, setVillagers, depart, resize, dispose, recenter, setClickHandler, canRecord, startRecording, stopRecording, isRecording]) assert.equal(typeof fn, 'function');
 const source = readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
 for (const token of ['OrthographicCamera', 'WebGLRenderer', 'buildReception', 'buildBaleBoard', 'createTotalBoard', 'PlaneGeometry', 'MeshBasicMaterial', 'ConeGeometry', 'buildTree', 'createVillager', 'queuePosition', 'WALK_DURATION = 5400', 'setPixelRatio', 'shadowMap.enabled']) assert.ok(source.includes(token), `scene3d keeps ${token}`);
 for (const token of ['pointerdown', 'pointermove', 'pinchDistance', 'cameraYaw', 'cameraZoom', 'recenter']) assert.ok(source.includes(token), `scene3d keeps ${token}`);
@@ -13,12 +13,15 @@ assert.ok(source.includes('headReplyTimer = setTimeout'), 'Pak Kades reply bubbl
 assert.ok(source.includes('clearTimeout(headReplyTimer)'), 'reply timer is cleared when replaced or disposed');
 assert.ok(source.includes('group.userData.speech = speech'), 'villagers own their original comment bubble');
 assert.ok(!source.includes('updateSpeech(record.group.userData.speech'), 'departure does not overwrite the villager comment bubble');
+for (const token of ['captureStream(30)', 'MediaRecorder', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'desa-komen-', 'startRecording', 'stopRecording', 'isRecording']) assert.ok(source.includes(token), `scene3d recorder keeps ${token}`);
 const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const markup = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
 const admin = readFileSync(new URL('../admin.html', import.meta.url), 'utf8');
 const adminScript = readFileSync(new URL('../src/admin.js', import.meta.url), 'utf8');
 assert.ok(main.includes('Browser ini membutuhkan WebGL'), 'WebGL failure has a simple browser requirement message');
+for (const token of ['recording-button', 'initRecordingControls', 'recording-elapsed', 'startRecording', 'stopRecording']) assert.ok(main.includes(token), `home recorder keeps ${token}`);
+for (const token of ['recording-button', 'recording-elapsed', 'Rekam']) assert.ok(markup.includes(token), `home recorder markup keeps ${token}`);
 for (const token of ['walkRig', 'world-fallback', 'scene-empty', 'reception-fallback', 'is-3d', 'comment-bubble']) {
   assert.ok(!main.includes(token) && !markup.includes(token) && !styles.includes(token), `2D fallback removed: ${token}`);
 }

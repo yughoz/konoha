@@ -50,6 +50,8 @@ let pointerStart = null;
 let pointerMoved = false;
 let pinchDistance = null;
 let buildClickHandler = null;
+let recorder = null;
+let recordingChunks = [];
 
 const mat = color => {
   if (materialCache.has(color)) return materialCache.get(color);
@@ -497,6 +499,82 @@ function render(now = performance.now()) {
   frame = requestAnimationFrame(render);
 }
 
+function recordingMimeType() {
+  const Recorder = globalThis.MediaRecorder;
+  if (!Recorder) return '';
+  for (const mimeType of ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']) {
+    if (!Recorder.isTypeSupported || Recorder.isTypeSupported(mimeType)) return mimeType;
+  }
+  return '';
+}
+
+function canRecord() {
+  return Boolean(renderer?.domElement?.captureStream && typeof globalThis.MediaRecorder === 'function');
+}
+
+function recordingFilename(date = new Date()) {
+  const pad = value => String(value).padStart(2, '0');
+  return `desa-komen-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}.webm`;
+}
+
+function downloadRecording(blob) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = recordingFilename();
+  link.hidden = true;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function startRecording() {
+  if (isRecording() || !canRecord()) return false;
+  const Recorder = globalThis.MediaRecorder;
+  let stream;
+  try { stream = renderer.domElement.captureStream(30); }
+  catch { return false; }
+  const mimeType = recordingMimeType();
+  try {
+    recorder = mimeType ? new Recorder(stream, { mimeType }) : new Recorder(stream);
+  } catch {
+    stream.getTracks?.().forEach(track => track.stop());
+    recorder = null;
+    return false;
+  }
+  recordingChunks = [];
+  recorder.ondataavailable = event => { if (event.data?.size) recordingChunks.push(event.data); };
+  recorder.onerror = () => { recordingChunks = []; };
+  recorder.onstop = () => {
+    const current = recorder;
+    const chunks = recordingChunks;
+    recorder = null;
+    recordingChunks = [];
+    current?.stream?.getTracks?.().forEach(track => track.stop());
+    if (chunks.length) downloadRecording(new Blob(chunks, { type: current?.mimeType || 'video/webm' }));
+  };
+  try {
+    recorder.start();
+  } catch {
+    recorder.stream?.getTracks?.().forEach(track => track.stop());
+    recorder = null;
+    recordingChunks = [];
+    return false;
+  }
+  return true;
+}
+
+function stopRecording() {
+  if (!isRecording()) return false;
+  recorder.stop();
+  return true;
+}
+
+function isRecording() {
+  return recorder?.state === 'recording';
+}
+
 function updateCamera() {
   if (!camera) return;
   const distance = cameraZoom * 1.65;
@@ -700,6 +778,7 @@ function depart(id, replyText) {
 
 function dispose() {
   if (!renderer) return;
+  if (isRecording()) stopRecording();
   cancelAnimationFrame(frame);
   unbindControls();
   clearTimeout(headReplyTimer);
@@ -724,5 +803,5 @@ function dispose() {
 function setClickHandler(handler) { clickHandler = typeof handler === 'function' ? handler : null; }
 function setBuildClickHandler(handler) { buildClickHandler = typeof handler === 'function' ? handler : null; }
 
-export const scene3d = { init, setVillagers, setTotalFollowers, setBuilds, depart, resize, dispose, recenter, setClickHandler, setBuildClickHandler };
-export { init, setVillagers, setTotalFollowers, setBuilds, depart, resize, dispose, recenter, setClickHandler, setBuildClickHandler };
+export const scene3d = { init, setVillagers, setTotalFollowers, setBuilds, depart, resize, dispose, recenter, setClickHandler, setBuildClickHandler, canRecord, startRecording, stopRecording, isRecording };
+export { init, setVillagers, setTotalFollowers, setBuilds, depart, resize, dispose, recenter, setClickHandler, setBuildClickHandler, canRecord, startRecording, stopRecording, isRecording };
