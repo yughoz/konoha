@@ -2,115 +2,44 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#f7f8f2" />
-    <meta name="description" content="Desa kecil yang hidup dari cerita kalian. Sampaikan ide ke Pak Kades, satu warga, satu cerita." />
-    <title>Desa Komen — Desa kecil, cerita besar.</title>
+    <meta name="description" content="Desa Komen — sampaikan cerita ke Pak Kades." />
+    <title>Desa Komen</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet" />
   </head>
-  <body>
+  <body class="game-body">
     <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M19.5 4.5C12 2.7 5.5 5.5 5.5 11.5a6 6 0 0 0 6 6c6 0 8.8-6.5 8-13Z"/><path d="m4 21 11-11M8 17v-5m0 5h5"/></symbol>
-      <symbol id="i-play" viewBox="0 0 24 24"><path d="m9 5 11 7-11 7V5Z"/></symbol>
-      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
-      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
-      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
-      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 0 1 18 0Z"/><path d="M7 10h8M7 14h5"/></symbol>
-      <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2m2-15a3 3 0 0 1 0 6m2 9v-2a6 6 0 0 0-2-4"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
-      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
-      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
-      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 8a8 8 0 1 1-1 7M4 3v5h5"/></symbol>
       <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
-      <symbol id="i-send" viewBox="0 0 24 24"><path d="m21 3-7 18-4-7-7-4L21 3Zm0 0L10 14"/></symbol>
-      <symbol id="i-door" viewBox="0 0 24 24"><path d="M13 5H5v14h8m2-11 4 4-4 4m-6-4h10"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+      <symbol id="i-center" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></symbol>
     </svg>
 
-    <header class="site-header">
-      <a class="brand" href="/" aria-label="Desa Komen, beranda">
-        <span class="brand-mark"><svg class="icon"><use href="#i-leaf" /></svg></span>
-        <span class="brand-name">desa komen<span>.</span></span>
-      </a>
-      <nav class="main-nav" aria-label="Navigasi utama">
-        <a class="nav-link is-active" href="/" aria-current="page">Beranda</a>
-        <button id="guide-open" class="nav-link" type="button">Cara main <span aria-hidden="true">↗</span></button>
-      </nav>
-      <div class="header-actions">
-        <span class="demo-tag"><i></i> <span id="connection-label">Menghubungkan…</span></span>
-        <button id="admin-open" class="button button-outline button-small" type="button"><svg class="icon"><use href="#i-lock" /></svg> Ruang admin</button>
-      </div>
+    <header class="site-header game-header">
+      <a class="brand" href="/" aria-label="Desa Komen, beranda"><span class="brand-mark"><svg class="icon"><use href="#i-leaf" /></svg></span><span class="brand-name">desa komen<span>.</span></span></a>
+      <div class="game-stats" aria-label="Statistik desa"><span><strong id="waiting-count">0</strong> mengantre</span><span class="stat-divider"></span><span><strong id="answered-count">0</strong> sudah disapa</span></div>
+      <nav class="main-nav" aria-label="Navigasi utama"><button id="guide-open" class="nav-link" type="button">Cara main <span aria-hidden="true">↗</span></button><a class="nav-link admin-link" href="/admin.html"><svg class="icon"><use href="#i-lock" /></svg> Ruang Pak Kades</a></nav>
+      <span class="connection-pill"><i></i><span id="connection-label">Menghubungkan…</span></span>
     </header>
 
-    <main class="page">
-      <section class="intro" aria-labelledby="page-title">
-        <div class="intro-title">
-          <p class="eyebrow"><span class="eyebrow-line"></span> DESA KECIL, CERITA BESAR</p>
-          <h1 id="page-title">Desa kecil,<br />cerita dari <em>kalian.</em></h1>
-        </div>
-        <div class="intro-aside">
-          <p>Setiap komentar punya cerita.<br />Di sini, semuanya dapat giliran bertemu Pak Kades.</p>
-          <div class="stats" aria-label="Statistik desa">
-            <div class="stat"><span id="waiting-count" class="stat-value">0</span><span class="stat-label"><span class="stat-dot"></span> Sedang mengantre</span></div>
-            <span class="stat-divider"></span>
-            <div class="stat"><span id="answered-count" class="stat-value">0</span><span class="stat-label"><svg class="icon"><use href="#i-check" /></svg> Sudah disapa</span></div>
-          </div>
+    <main class="game-page">
+      <section class="village-card" aria-label="Desa Komen 3D">
+        <div id="village-scene" class="village-scene">
+          <div id="world" class="world"><canvas id="world-canvas" class="world-canvas" aria-label="Desa 3D, seret untuk menggeser dan gulir untuk zoom"></canvas><p id="scene-error" class="webgl-required" hidden></p></div>
+          <div class="scene-overlay"><div><span class="live-dot"></span><span>Alun-alun Desa Komen</span><span id="sim-status" class="status-chip">Menghubungkan…</span></div><button id="recenter-button" class="icon-button" type="button" title="Kembali ke Pak Kades" aria-label="Kembali ke Pak Kades"><svg class="icon"><use href="#i-center" /></svg></button></div>
+          <div class="scene-help"><span><span class="legend-dot"></span> Klik warga untuk membaca ceritanya</span><span>Seret untuk melihat desa · scroll untuk zoom</span></div>
         </div>
       </section>
-
-      <section class="workspace" aria-label="Desa dan balai obrolan">
-        <div class="village-card">
-          <div class="scene-toolbar">
-            <div class="scene-title"><span class="live-dot"></span><span>Alun-alun desa</span><span class="scene-separator">/</span><span class="scene-weather"><svg class="icon"><use href="#i-sun" /></svg> Cerah</span></div>
-            <span id="sim-status" class="status-chip">Menghubungkan…</span>
-          </div>
-
-          <div id="village-scene" class="village-scene" aria-label="Desa 3D dan antrean warga">
-            <div id="world" class="world">
-              <canvas id="world-canvas" class="world-canvas" aria-label="Desa 3D dan antrean warga"></canvas>
-            </div>
-          </div>
-
-          <div class="scene-footer"><span><span class="legend-dot"></span> Satu warga, satu cerita.</span><span class="scene-footer-hint">Klik warga untuk membaca komentar <span aria-hidden="true">↗</span></span><button id="mobile-panel-open" class="text-button mobile-panel-open" type="button" aria-controls="conversation-panel" aria-expanded="false">Lihat antrean <svg class="icon"><use href="#i-chat" /></svg></button></div>
-        </div>
-
-        <div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>
-        <aside id="conversation-panel" class="conversation-panel" aria-labelledby="panel-title">
-          <div class="panel-heading"><span class="panel-icon"><svg class="icon"><use href="#i-chat" /></svg></span><div><h2 id="panel-title">Balai obrolan</h2><p>Tempat cerita mendapat jawaban.</p></div><span class="panel-decoration" aria-hidden="true">✳</span><button id="panel-close" class="icon-button panel-close" type="button" aria-label="Tutup balai obrolan"><svg class="icon"><use href="#i-close" /></svg></button></div>
-          <div id="admin-summary" class="admin-summary" hidden><span><span class="live-dot"></span> Pak Kades sedang bertugas</span><button id="logout" class="text-button" type="button">Keluar <svg class="icon"><use href="#i-door" /></svg></button></div>
-          <div id="panel-tabs" class="panel-tabs" role="tablist" aria-label="Obrolan desa">
-            <button class="panel-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="queue-tab" data-tab="queue">Antrean <span id="queue-count" class="tab-count">0</span></button>
-            <button class="panel-tab" type="button" role="tab" aria-selected="false" aria-controls="history-tab" data-tab="history">Riwayat</button>
-          </div>
-          <div id="queue-tab" class="panel-content" role="tabpanel" aria-label="Antrean komentar">
-            <div class="queue-section-label"><span>WARGA YANG MENUNGGU</span><span>Sesuai urutan datang</span></div>
-            <div id="queue-list" class="queue-list"></div>
-            <nav id="queue-pagination" class="pagination" aria-label="Halaman antrean" hidden><button id="queue-prev" type="button" class="text-button">← Sebelumnya</button><span id="queue-page"></span><button id="queue-next" type="button" class="text-button">Berikutnya →</button></nav>
-            <div id="empty-queue" class="empty-queue"><span class="empty-queue-icon"><svg class="icon"><use href="#i-users" /></svg><i>✧</i></span><h3>Belum ada yang antre</h3><p>Komentar di Post/Reel @nekoding.xyz<br />akan menjadi warga desa.</p><span class="empty-small">Cerita pertama bisa datang kapan saja.</span></div>
-          </div>
-          <div id="history-tab" class="panel-content" role="tabpanel" aria-label="Riwayat balasan" hidden><div class="queue-section-label"><span>CERITA YANG SUDAH DISAPA</span></div><div id="activity-list" class="activity-list"><div class="empty-history"><svg class="icon"><use href="#i-chat" /></svg><p>Belum ada balasan.<br />Sapa warga pertama, yuk.</p></div></div><nav id="history-pagination" class="pagination" aria-label="Halaman riwayat" hidden><button id="history-prev" type="button" class="text-button">← Sebelumnya</button><span id="history-page"></span><button id="history-next" type="button" class="text-button">Berikutnya →</button></nav></div>
-          <div id="locked-state" class="locked-state"><svg class="icon"><use href="#i-lock" /></svg><p>Mau menyapa warga?<br /><button id="panel-login" class="text-button" type="button">Masuk sebagai Pak Kades <span aria-hidden="true">→</span></button></p></div>
-          <div id="reply-area" class="reply-area" hidden><form id="reply-form"><label for="reply-input">BALAS <span id="reply-target">WARGA TERDEPAN</span></label><textarea id="reply-input" name="reply" rows="3" maxlength="500" placeholder="Tulis jawaban hangat dari Pak Kades…" required></textarea><p id="reply-state" class="reply-state" role="status"></p><div class="reply-meta"><span id="reply-error" role="alert"></span><span><span id="reply-count">0/500</span></span></div><button id="reply-submit" class="button button-primary reply-submit" type="submit">Kirim ke Instagram <svg class="icon"><use href="#i-send" /></svg></button></form></div>
-          <div class="panel-bottom"><span class="mini-leaf"><svg class="icon"><use href="#i-leaf" /></svg></span><span>Pelan-pelan, semua kebagian.</span></div>
-        </aside>
-      </section>
-
-      <section class="simulation-card" aria-labelledby="sync-title">
-        <div class="simulation-illustration" aria-hidden="true"><svg class="icon"><use href="#i-chat" /></svg><span>✦</span></div>
-        <div class="simulation-copy"><div class="simulation-eyebrow">CERITA DARI INSTAGRAM</div><h2 id="sync-title">Semua cerita, satu desa.</h2><p id="sync-hint">Semua Post/Reel @nekoding.xyz · Komentar diperiksa setiap 60 detik.</p><p id="sync-login-note">Masuk sebagai Pak Kades untuk sinkronisasi manual.</p></div>
-        <div class="simulation-actions"><button id="sync-button" class="button button-primary" type="button" disabled><svg class="icon"><use href="#i-reset" /></svg><span id="sync-label">Sinkronkan sekarang</span></button><button id="sim-button" class="button button-outline" type="button">Coba simulasi 3D</button><button id="sim-reset" class="button button-outline" type="button" hidden>Reset simulasi</button></div>
-      </section>
-      <div id="storage-note" class="storage-note" role="status" hidden></div>
-      <footer class="site-footer"><span>© Desa Komen <span class="footer-dot">·</span> Dibangun dari obrolan kecil.</span><span><span class="live-dot"></span> Cerita tersimpan di desa <svg class="icon"><use href="#i-info" /></svg></span></footer>
+      <p id="storage-note" class="storage-note" role="status" hidden></p>
     </main>
 
-    <dialog id="login-dialog" class="dialog" aria-labelledby="login-title"><div class="dialog-heading"><span class="dialog-icon"><svg class="icon"><use href="#i-lock" /></svg></span><button id="login-close" class="icon-button" type="button" aria-label="Tutup login"><svg class="icon"><use href="#i-close" /></svg></button></div><p class="eyebrow">RUANG PAK KADES</p><h2 id="login-title">Selamat datang,<br />Pak Kades.</h2><p class="dialog-description">Masuk untuk mendengar dan membalas cerita warga.</p><form id="login-form"><label for="username">Email admin</label><input id="username" name="username" type="email" autocomplete="username" placeholder="admin@desa.local" required /><label for="password">Kata sandi</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Masukkan kata sandi" required /><p id="login-error" class="form-error" role="alert"></p><button class="button button-primary" type="submit">Masuk ke balai desa <svg class="icon"><use href="#i-arrow" /></svg></button></form></dialog>
-
-    <dialog id="guide-dialog" class="dialog guide-dialog" aria-labelledby="guide-title"><div class="dialog-heading"><span class="dialog-icon"><svg class="icon"><use href="#i-leaf" /></svg></span><button id="guide-close" class="icon-button" type="button" aria-label="Tutup panduan"><svg class="icon"><use href="#i-close" /></svg></button></div><p class="eyebrow">KENALAN DULU, YUK</p><h2 id="guide-title">Cara cerita<br />sampai ke Pak Kades.</h2><ol class="guide-steps"><li><span>01</span><div><h3>Hidupkan desa</h3><p>Tulis komentar di Post/Reel @nekoding.xyz. Komentar yang diterima akan datang sebagai warga, tanpa login di desa.</p></div></li><li><span>02</span><div><h3>Dengarkan ceritanya</h3><p>Klik warga atau lihat antrean untuk membaca komentar lengkap.</p></div></li><li><span>03</span><div><h3>Sapa, lalu lanjutkan</h3><p>Masuk sebagai Pak Kades dan balas warga terdepan. Setelah balasan terkirim ke Instagram, warga pulang dan antrean maju.</p></div></li></ol><p class="guide-note"><svg class="icon"><use href="#i-info" /></svg> Komentar diperiksa setiap 60 detik. Semua pengunjung melihat antrean desa yang sama.</p></dialog>
-
-    <dialog id="comment-dialog" class="dialog comment-dialog" aria-labelledby="comment-name"><div class="dialog-heading"><span class="dialog-icon"><svg class="icon"><use href="#i-chat" /></svg></span><button id="comment-close" class="icon-button" type="button" aria-label="Tutup komentar"><svg class="icon"><use href="#i-close" /></svg></button></div><p class="eyebrow">CERITA DARI WARGA</p><h2 id="comment-name">Warga desa</h2><p id="comment-text" class="full-comment"></p><a id="comment-source" class="source-link" target="_blank" rel="noopener noreferrer" hidden>Lihat di Instagram ↗</a><p class="guide-note">Semua cerita akan mendapat giliran sesuai urutan datang.</p></dialog>
-
+    <dialog id="guide-dialog" class="dialog guide-dialog" aria-labelledby="guide-title"><div class="dialog-heading"><span class="dialog-icon"><svg class="icon"><use href="#i-leaf" /></svg></span><button id="guide-close" class="icon-button" type="button" aria-label="Tutup panduan"><svg class="icon"><use href="#i-close" /></svg></button></div><p class="eyebrow">KENALAN DULU, YUK</p><h2 id="guide-title">Cara cerita sampai ke Pak Kades.</h2><ol class="guide-steps"><li><span>01</span><div><h3>Tulis cerita</h3><p>Komentar di Post/Reel @nekoding.xyz akan datang sebagai warga desa.</p></div></li><li><span>02</span><div><h3>Dengarkan ceritanya</h3><p>Klik warga di desa untuk membaca komentar lengkap.</p></div></li><li><span>03</span><div><h3>Sapa, lalu lanjutkan</h3><p>Pak Kades akan membalas dari ruang khususnya.</p></div></li></ol><p class="guide-note"><svg class="icon"><use href="#i-info" /></svg> Semua pengunjung melihat antrean desa yang sama.</p></dialog>
+    <dialog id="comment-dialog" class="dialog comment-dialog" aria-labelledby="comment-name"><div class="dialog-heading"><span class="dialog-icon"><svg class="icon"><use href="#i-info" /></svg></span><button id="comment-close" class="icon-button" type="button" aria-label="Tutup komentar"><svg class="icon"><use href="#i-close" /></svg></button></div><p class="eyebrow">CERITA DARI WARGA</p><h2 id="comment-name">Warga desa</h2><p id="comment-text" class="full-comment"></p><a id="comment-source" class="source-link" target="_blank" rel="noopener noreferrer" hidden>Lihat di Instagram ↗</a></dialog>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script type="module" src="/src/main.js"></script>
   </body>

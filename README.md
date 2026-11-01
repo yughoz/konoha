@@ -4,7 +4,7 @@ Desa interaktif dari komentar Instagram: warga mengantre di depan rumah Pak Kade
 
 ## Dunia 3D
 
-Scene desa memakai Three.js dengan kamera isometric dan mesh low-poly procedural untuk rumah Pak Kades, jalan, tanah, pohon, semak, dan warga. Komentar tampil sebagai bubble 3D di atas kepala warga. Antrean mengikuti urutan PocketBase; setelah balasan berhasil, warga berjalan pulang selama 5,4 detik. Panel admin tetap HTML agar login, keyboard, dan balasan tetap mudah digunakan. Browser harus mendukung WebGL; browser yang tidak mendukungnya menampilkan pesan sederhana.
+Scene desa memakai Three.js dengan kamera isometric dan mesh low-poly procedural untuk rumah Pak Kades, jalan, tanah, pohon, semak, dan warga. Komentar tampil sebagai bubble 3D di atas kepala warga. Seret dengan mouse atau satu jari untuk menggeser dan memutar pandangan, gunakan scroll atau pinch untuk zoom, lalu tekan tombol bidik untuk kembali ke Pak Kades. Antrean mengikuti urutan PocketBase; setelah balasan berhasil, warga berjalan pulang selama 5,4 detik dan bubble balasan Pak Kades muncul di balai. Beranda hanya berisi game dan statistik ringkas; login, antrean, riwayat, balasan, sinkronisasi, serta simulasi tersedia di [/admin.html](/admin.html). Browser harus mendukung WebGL; browser yang tidak mendukungnya menampilkan pesan sederhana.
 
 ## Jalankan lokal
 

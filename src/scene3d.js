@@ -37,6 +37,17 @@ const villagers = new Map();
 const shared = new Set();
 const materialCache = new Map();
 let materials = {};
+let clickHandler = null;
+let controlsCanvas = null;
+let controls = null;
+let cameraTarget = new THREE.Vector3(0, 0.8, 0);
+let cameraYaw = 0;
+let cameraPitch = 0.82;
+let cameraZoom = 7;
+let pointers = new Map();
+let pointerStart = null;
+let pointerMoved = false;
+let pinchDistance = null;
 
 const mat = color => {
   if (materialCache.has(color)) return materialCache.get(color);
@@ -228,18 +239,18 @@ function buildTree(x, z, scale = 1) {
 
 function buildVillage() {
   const group = new THREE.Group();
-  const ground = new THREE.Mesh(new THREE.BoxGeometry(18, 0.35, 13), materials.grass);
+  // The larger ground keeps the village readable after the camera is panned.
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(30, 0.35, 22), materials.grass);
   ground.position.y = -0.18;
   ground.receiveShadow = true;
   group.add(ground);
-  const path = new THREE.Mesh(new THREE.BoxGeometry(4, 0.08, 11), materials.path);
-  path.position.set(0, 0.04, 1.2);
-  path.rotation.y = -0.12;
-  path.receiveShadow = true;
-  group.add(path);
+  const path = new THREE.Mesh(new THREE.BoxGeometry(4, 0.08, 20), materials.path);
+  path.position.set(0, 0.04, 1.2); path.rotation.y = -0.12; path.receiveShadow = true; group.add(path);
+  const crossPath = new THREE.Mesh(new THREE.BoxGeometry(26, 0.07, 2.5), materials.path);
+  crossPath.position.set(0, 0.045, 2.2); crossPath.rotation.y = -0.12; crossPath.receiveShadow = true; group.add(crossPath);
   group.add(buildReception());
-  [[-6, -3, 1.3], [6, -2, 1.2], [-6, 4, 0.9], [6, 5, 1.1], [-3.8, 5.1, 0.8], [4, 1.5, 0.7]].forEach(item => group.add(buildTree(...item)));
-  for (const [x, z] of [[-4.3, -0.5], [4.5, -1], [-5, 3.1], [5.3, 3.8]]) {
+  [[-11, -7, 1.3], [-7, -8, 1.0], [8, -8, 1.2], [12, -6, 1.1], [-12, 7, 1.0], [-8, 9, 0.9], [8, 8, 1.1], [12, 6, 1.2], [-3.8, 7.8, 0.8], [4, -5.8, 0.7], [10, 1.5, 0.8], [-10, 1.2, 0.9]].forEach(item => group.add(buildTree(...item)));
+  for (const [x, z] of [[-8.3, -3.5], [7.5, -3.4], [-11, 3.1], [11, 3.8], [-5.5, 8.2], [5.5, 8]]) {
     const bush = mesh(new THREE.IcosahedronGeometry(0.65, 1), materials.leafLight);
     bush.position.set(x, 0.55, z);
     group.add(bush);
@@ -422,6 +433,101 @@ function render(now = performance.now()) {
   frame = requestAnimationFrame(render);
 }
 
+function updateCamera() {
+  if (!camera) return;
+  const distance = cameraZoom * 1.65;
+  const horizontal = Math.cos(cameraPitch) * distance;
+  camera.position.set(
+    cameraTarget.x + Math.sin(cameraYaw) * horizontal,
+    cameraTarget.y + Math.sin(cameraPitch) * distance,
+    cameraTarget.z + Math.cos(cameraYaw) * horizontal,
+  );
+  camera.lookAt(cameraTarget);
+}
+
+function recenter() {
+  cameraTarget.set(0, 0.8, 0);
+  cameraYaw = 0;
+  cameraPitch = 0.82;
+  cameraZoom = 7;
+  updateCamera();
+  resize();
+}
+
+function pointerDistance() {
+  const values = [...pointers.values()];
+  if (values.length < 2) return null;
+  return Math.hypot(values[0].x - values[1].x, values[0].y - values[1].y);
+}
+
+function bindControls(canvas) {
+  controlsCanvas = canvas;
+  controls = {
+    down(event) {
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      canvas.setPointerCapture?.(event.pointerId);
+      pointerStart = { x: event.clientX, y: event.clientY, targetX: cameraTarget.x, targetZ: cameraTarget.z, yaw: cameraYaw };
+      pointerMoved = false;
+      pinchDistance = pointerDistance();
+    },
+    move(event) {
+      if (!pointers.has(event.pointerId)) return;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size > 1) {
+        const distance = pointerDistance();
+        if (distance && pinchDistance) cameraZoom = THREE.MathUtils.clamp(cameraZoom * pinchDistance / distance, 4.2, 11);
+        pinchDistance = distance;
+        updateCamera();
+        pointerMoved = true;
+        return;
+      }
+      if (!pointerStart) return;
+      const dx = event.clientX - pointerStart.x;
+      const dy = event.clientY - pointerStart.y;
+      if (Math.abs(dx) + Math.abs(dy) > 5) pointerMoved = true;
+      // Horizontal drag gives a restrained orbit; vertical drag pans over the map.
+      cameraYaw = THREE.MathUtils.clamp(pointerStart.yaw - dx * 0.004, -0.75, 0.75);
+      const scale = cameraZoom / Math.max(220, canvas.clientHeight);
+      cameraTarget.x = THREE.MathUtils.clamp(pointerStart.targetX - dx * scale, -9.5, 9.5);
+      cameraTarget.z = THREE.MathUtils.clamp(pointerStart.targetZ + dy * scale, -7, 7);
+      updateCamera();
+    },
+    up(event) {
+      const wasClick = !pointerMoved && pointers.size === 1;
+      pointers.delete(event.pointerId);
+      if (wasClick && clickHandler && camera && renderer) {
+        const rect = canvas.getBoundingClientRect();
+        const ndc = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+        const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(ndc, camera);
+        const hits = raycaster.intersectObjects([...villagers.values()].map(record => record.group), true);
+        const hit = hits.find(item => item.object.visible);
+        if (hit) {
+          let object = hit.object;
+          while (object && !object.userData?.comment) object = object.parent;
+          if (object?.userData?.comment) clickHandler(object.userData.comment);
+        }
+      }
+      if (!pointers.size) { pointerStart = null; pinchDistance = null; }
+    },
+    wheel(event) { event.preventDefault(); cameraZoom = THREE.MathUtils.clamp(cameraZoom * Math.exp(event.deltaY * 0.001), 4.2, 11); updateCamera(); },
+  };
+  canvas.addEventListener('pointerdown', controls.down, { passive: true });
+  canvas.addEventListener('pointermove', controls.move, { passive: true });
+  canvas.addEventListener('pointerup', controls.up, { passive: true });
+  canvas.addEventListener('pointercancel', controls.up, { passive: true });
+  canvas.addEventListener('wheel', controls.wheel, { passive: false });
+}
+
+function unbindControls() {
+  if (!controlsCanvas || !controls) return;
+  controlsCanvas.removeEventListener('pointerdown', controls.down);
+  controlsCanvas.removeEventListener('pointermove', controls.move);
+  controlsCanvas.removeEventListener('pointerup', controls.up);
+  controlsCanvas.removeEventListener('pointercancel', controls.up);
+  controlsCanvas.removeEventListener('wheel', controls.wheel);
+  pointers.clear(); pointerStart = null; pinchDistance = null; controlsCanvas = null; controls = null;
+}
+
 function init(container) {
   if (renderer) return true;
   if (!container) return false;
@@ -442,9 +548,8 @@ function init(container) {
   renderer.domElement.setAttribute('aria-hidden', 'true');
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xdfe8ce);
-  camera = new THREE.OrthographicCamera(-8, 8, 6, -6, 0.1, 80);
-  camera.position.set(11, 11, 11);
-  camera.lookAt(0, 0.8, 0);
+  camera = new THREE.OrthographicCamera(-8, 8, 6, -6, 0.1, 100);
+  recenter();
   scene.add(new THREE.HemisphereLight(0xfaf4dc, 0x66805f, 2.2));
   const sun = new THREE.DirectionalLight(0xfff0c9, 2.4);
   sun.position.set(-7, 12, 8);
@@ -458,6 +563,7 @@ function init(container) {
   villagersRoot = new THREE.Group();
   root.add(villagersRoot);
   scene.add(root);
+  bindControls(canvas);
   if (typeof ResizeObserver === 'function') {
     resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(container);
@@ -530,6 +636,7 @@ function depart(id, replyText) {
 function dispose() {
   if (!renderer) return;
   cancelAnimationFrame(frame);
+  unbindControls();
   clearTimeout(headReplyTimer);
   headReplyTimer = null;
   resizeObserver?.disconnect();
@@ -548,5 +655,7 @@ function dispose() {
   villagers.clear();
 }
 
-export const scene3d = { init, setVillagers, setTotalFollowers, depart, resize, dispose };
-export { init, setVillagers, setTotalFollowers, depart, resize, dispose };
+function setClickHandler(handler) { clickHandler = typeof handler === 'function' ? handler : null; }
+
+export const scene3d = { init, setVillagers, setTotalFollowers, depart, resize, dispose, recenter, setClickHandler };
+export { init, setVillagers, setTotalFollowers, depart, resize, dispose, recenter, setClickHandler };
