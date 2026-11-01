@@ -29,6 +29,9 @@ let headReplySpeech;
 let headReplyTimer;
 let totalBoard;
 let totalFollowers = null;
+let narrator;
+let narratorWaveStarted = 0;
+let narratorWaveUntil = 0;
 let frame = 0;
 let resizeObserver;
 let lastTime = 0;
@@ -52,6 +55,8 @@ let pinchDistance = null;
 let buildClickHandler = null;
 let recorder = null;
 let recordingChunks = [];
+
+const NARRATOR_WAVE_DURATION = 1100;
 
 const mat = color => {
   if (materialCache.has(color)) return materialCache.get(color);
@@ -154,6 +159,88 @@ function buildReception() {
   group.add(board);
   totalBoard = board.userData.plaque;
   updateTotalBoard(totalFollowers);
+  return group;
+}
+
+// A compact low-poly narrator sits beside the queue and faces it from the side.
+function buildNarrator() {
+  const group = new THREE.Group();
+  group.name = 'narrator';
+  group.position.set(-2.35, 0, 1.05);
+  group.rotation.y = Math.PI / 2;
+  group.scale.setScalar(0.82);
+  group.userData.idlePhase = 1.1;
+
+  const person = new THREE.Group();
+  person.name = 'narrator-character';
+  person.userData.baseY = person.position.y;
+  const skin = mat(0xd89f79);
+  const shirt = mat(0x3f6c52);
+  const accent = mat(0xe7a67f);
+  const hair = mat(0x342c2b);
+  const hat = mat(0x50774e);
+  const dark = mat(0x2f3d35);
+  const shoes = mat(0x48534b);
+
+  const body = mesh(new THREE.CapsuleGeometry(0.42, 0.7, 4, 8), shirt);
+  body.position.y = 1.35;
+  person.add(body);
+  addBox(person, [0.56, 0.62, 0.14], [0, 1.36, 0.34], accent);
+
+  const head = mesh(new THREE.SphereGeometry(0.42, 8, 6), skin);
+  head.position.y = 2.18;
+  person.add(head);
+  const hairCap = mesh(new THREE.SphereGeometry(0.43, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), hair);
+  hairCap.position.y = 2.28;
+  person.add(hairCap);
+  const brim = mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.12, 8), hat);
+  brim.position.y = 2.54;
+  person.add(brim);
+  const crown = mesh(new THREE.ConeGeometry(0.39, 0.48, 8), hat);
+  crown.position.y = 2.82;
+  person.add(crown);
+
+  const nose = mesh(new THREE.ConeGeometry(0.065, 0.16, 5), skin);
+  nose.rotation.x = Math.PI / 2;
+  nose.position.set(0, 2.14, 0.39);
+  person.add(nose);
+  const mouth = mesh(new THREE.SphereGeometry(0.055, 6, 4), dark, false, false);
+  mouth.scale.set(1.2, 0.45, 0.4);
+  mouth.position.set(0, 1.98, 0.4);
+  person.add(mouth);
+  const eyes = [-0.15, 0.15].map(x => {
+    const eye = mesh(new THREE.SphereGeometry(0.045, 6, 4), dark, false, false);
+    eye.position.set(x, 2.27, 0.36);
+    person.add(eye);
+    return eye;
+  });
+
+  const addArm = side => {
+    const arm = new THREE.Group();
+    arm.position.set(side * 0.53, 1.56, 0);
+    const sleeve = mesh(new THREE.BoxGeometry(0.18, 0.58, 0.18), shirt);
+    sleeve.position.y = -0.29;
+    arm.add(sleeve);
+    const hand = mesh(new THREE.SphereGeometry(0.14, 6, 4), skin);
+    hand.position.y = -0.63;
+    arm.add(hand);
+    arm.userData.baseRotation = side > 0 ? -2.45 : 0.15;
+    arm.rotation.z = arm.userData.baseRotation;
+    person.add(arm);
+    return arm;
+  };
+  const leftArm = addArm(-1);
+  const rightArm = addArm(1);
+  const microphone = mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.28, 8), dark);
+  microphone.position.set(0, -0.78, 0.12);
+  rightArm.add(microphone);
+
+  addBox(person, [0.2, 0.7, 0.2], [-0.2, 0.46, 0], shoes);
+  addBox(person, [0.2, 0.7, 0.2], [0.2, 0.46, 0], shoes);
+  person.userData.arms = [leftArm, rightArm];
+  person.userData.eyes = eyes;
+  group.userData.person = person;
+  group.add(person);
   return group;
 }
 
@@ -466,6 +553,38 @@ function disposeObject(object) {
   });
 }
 
+function animateNarrator(now) {
+  if (!narrator) return;
+  const { person } = narrator.userData;
+  const { arms, eyes } = person.userData;
+  const [leftArm, rightArm] = arms;
+  if (reducedMotion) {
+    person.position.y = person.userData.baseY;
+    leftArm.rotation.z = leftArm.userData.baseRotation;
+    rightArm.rotation.z = rightArm.userData.baseRotation;
+    eyes.forEach(eye => { eye.scale.y = 1; });
+    return;
+  }
+  const phase = now * 0.002 + narrator.userData.idlePhase;
+  person.position.y = person.userData.baseY + Math.sin(phase) * 0.028;
+  leftArm.rotation.z = leftArm.userData.baseRotation + Math.sin(phase + 1.2) * 0.025;
+  let wave = 0;
+  if (now < narratorWaveUntil) {
+    const progress = THREE.MathUtils.clamp((now - narratorWaveStarted) / NARRATOR_WAVE_DURATION, 0, 1);
+    wave = Math.sin(progress * Math.PI) * Math.sin(progress * Math.PI * 6) * 0.48;
+  }
+  rightArm.rotation.z = rightArm.userData.baseRotation + Math.sin(phase) * 0.03 + wave;
+  const blinkPhase = now % 4400;
+  const blink = blinkPhase > 3320 && blinkPhase < 3460;
+  eyes.forEach(eye => { eye.scale.y = blink ? 0.12 : 1; });
+}
+
+function triggerNarratorWave(now = performance.now()) {
+  if (!narrator || reducedMotion) return;
+  narratorWaveStarted = now;
+  narratorWaveUntil = now + NARRATOR_WAVE_DURATION;
+}
+
 function render(now = performance.now()) {
   if (!renderer) return;
   const delta = Math.min(100, now - lastTime);
@@ -477,6 +596,7 @@ function render(now = performance.now()) {
     leftArm.rotation.z = -0.2 + Math.sin(phase + Math.PI) * 0.035;
     rightArm.rotation.z = 0.2 + Math.sin(phase) * 0.035;
   }
+  animateNarrator(now);
   for (const record of villagers.values()) {
     if (record.departing) {
       const duration = reducedMotion ? REDUCED_DURATION : WALK_DURATION;
@@ -703,6 +823,8 @@ function init(container) {
   scene.add(sun);
   createMaterials();
   root = buildVillage();
+  narrator = buildNarrator();
+  root.add(narrator);
   villagersRoot = new THREE.Group();
   root.add(villagersRoot);
   scene.add(root);
@@ -742,13 +864,18 @@ function setVillagers(comments = []) {
       villagers.delete(id);
     }
   }
+  let hasNewComment = false;
   visible.forEach((comment, index) => {
     const existing = villagers.get(comment.id);
     if (existing && !existing.departing) {
       existing.index = index;
       existing.comment = comment;
-    } else if (!existing) villagers.set(comment.id, { id: comment.id, group: createVillager(comment, index), comment, index, departing: false });
+    } else if (!existing) {
+      hasNewComment = true;
+      villagers.set(comment.id, { id: comment.id, group: createVillager(comment, index), comment, index, departing: false });
+    }
   });
+  if (hasNewComment) triggerNarratorWave();
 }
 
 function setTotalFollowers(value) {
@@ -796,6 +923,9 @@ function dispose() {
   headReplySpeech = null;
   totalBoard = null;
   totalFollowers = null;
+  narrator = null;
+  narratorWaveStarted = 0;
+  narratorWaveUntil = 0;
   villagers.clear();
   buildPlots.clear();
 }
