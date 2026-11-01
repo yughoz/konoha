@@ -126,7 +126,7 @@ function buildReception() {
 
   const board = buildBaleBoard();
   board.position.set(3.25, 0, 0.42);
-  board.rotation.y = -0.22;
+  board.rotation.y = 0.35;
   board.rotation.z = 0.025;
   group.add(board);
   totalBoard = board.userData.plaque;
@@ -149,7 +149,7 @@ function buildBaleBoard() {
   roof.position.y = 3.36;
   group.add(roof);
   const plaque = createTotalBoard();
-  plaque.position.set(0, 2.1, 0.13);
+  plaque.position.set(0, 2.1, 0.24);
   group.add(plaque);
   group.userData.plaque = plaque;
   return group;
@@ -162,14 +162,13 @@ function createTotalBoard() {
   const context = canvas.getContext('2d');
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
-  const sprite = new THREE.Sprite(material);
-  sprite.scale.set(2.9, 1.35, 1);
-  sprite.renderOrder = 18;
-  sprite.userData.canvas = canvas;
-  sprite.userData.context = context;
-  sprite.userData.texture = texture;
-  return sprite;
+  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, depthTest: false, depthWrite: false });
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 1.35), material);
+  plaque.renderOrder = 18;
+  plaque.userData.canvas = canvas;
+  plaque.userData.context = context;
+  plaque.userData.texture = texture;
+  return plaque;
 }
 
 function updateTotalBoard(value) {
