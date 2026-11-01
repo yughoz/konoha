@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 const WALK_DURATION = 5400;
 const REDUCED_DURATION = 350;
+const HEAD_REPLY_DURATION = 4200;
 const palette = {
   grass: 0xc5d7a7,
   path: 0xd9c89d,
@@ -24,6 +25,8 @@ let camera;
 let root;
 let villagersRoot;
 let pakKades;
+let headReplySpeech;
+let headReplyTimer;
 let totalBoard;
 let totalFollowers = null;
 let frame = 0;
@@ -123,6 +126,11 @@ function buildReception() {
   person.scale.setScalar(1.15);
   group.add(person);
   pakKades = person;
+  headReplySpeech = createSpeech({ name: 'Pak Kades', text: '' });
+  headReplySpeech.position.set(0.15, 3.7, 0.25);
+  headReplySpeech.scale.set(4.15, 1.95, 1);
+  headReplySpeech.visible = false;
+  person.add(headReplySpeech);
 
   const board = buildBaleBoard();
   board.position.set(3.25, 0, 0.42);
@@ -503,7 +511,15 @@ function setTotalFollowers(value) {
 function depart(id, replyText) {
   const record = villagers.get(id);
   if (!record || record.departing) return false;
-  if (replyText) updateSpeech(record.group.userData.speech, { name: 'Pak Kades', text: replyText });
+  if (replyText && headReplySpeech) {
+    clearTimeout(headReplyTimer);
+    updateSpeech(headReplySpeech, { name: 'Pak Kades', text: replyText });
+    headReplySpeech.visible = true;
+    headReplyTimer = setTimeout(() => {
+      if (headReplySpeech) headReplySpeech.visible = false;
+      headReplyTimer = null;
+    }, HEAD_REPLY_DURATION);
+  }
   record.departing = true;
   record.elapsed = 0;
   record.start = record.group.position.clone();
@@ -514,6 +530,8 @@ function depart(id, replyText) {
 function dispose() {
   if (!renderer) return;
   cancelAnimationFrame(frame);
+  clearTimeout(headReplyTimer);
+  headReplyTimer = null;
   resizeObserver?.disconnect();
   disposeObject(scene);
   shared.forEach(material => material.dispose());
@@ -524,6 +542,7 @@ function dispose() {
   renderer.domElement.remove();
   renderer = null; scene = null; camera = null; root = null; villagersRoot = null;
   pakKades = null;
+  headReplySpeech = null;
   totalBoard = null;
   totalFollowers = null;
   villagers.clear();
