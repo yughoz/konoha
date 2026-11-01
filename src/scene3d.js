@@ -176,22 +176,30 @@ function updateTotalBoard(value) {
   const context = totalBoard.userData.context;
   const formatted = Number.isFinite(Number(value)) ? new Intl.NumberFormat('id-ID').format(Number(value)) : '—';
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = '#fff8dc';
-  context.strokeStyle = '#79583f';
-  context.lineWidth = 10;
+  context.fillStyle = '#7b573d';
+  context.strokeStyle = '#4d3427';
+  context.lineWidth = 14;
   roundedRect(context, 8, 8, canvas.width - 16, canvas.height - 16, 24);
   context.fill();
   context.stroke();
-  context.fillStyle = '#5b704d';
+  context.strokeStyle = '#9a704d66';
+  context.lineWidth = 3;
+  for (const y of [74, 170]) {
+    context.beginPath();
+    context.moveTo(30, y);
+    context.lineTo(canvas.width - 30, y + 2);
+    context.stroke();
+  }
   context.textAlign = 'center';
-  context.font = '700 30px DM Sans, sans-serif';
+  context.fillStyle = '#f3e4b9';
+  context.font = '700 27px DM Sans, sans-serif';
   context.fillText('TOTAL WARGA', canvas.width / 2, 58);
-  context.fillStyle = '#2e573e';
+  context.fillStyle = '#f6d384';
   context.font = '700 72px Fraunces, Georgia, serif';
   context.fillText(formatted, canvas.width / 2, 150);
-  context.fillStyle = '#8b987c';
-  context.font = '500 20px DM Sans, sans-serif';
-  context.fillText('followers', canvas.width / 2, 190);
+  context.fillStyle = '#dbc39b';
+  context.font = '700 17px DM Sans, sans-serif';
+  context.fillText('PENGIKUT IG', canvas.width / 2, 205);
   totalBoard.userData.texture.needsUpdate = true;
 }
 
